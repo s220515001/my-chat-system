@@ -858,18 +858,18 @@
         document.querySelectorAll('.contact-item').forEach(el => {
             el.addEventListener('click', () => {
                 const id = el.dataset.id;
-                const 输入 = el.dataset.输入;
+                const type = el.dataset.type;
                 const name = el.dataset.name;
-                switchChat(id, 输入, name);
+                switchChat(id, type, name);
             });
         });
         
-        document.querySelec到rAll('.group-item').forEach(el => {
+        document.querySelectorAll('.group-item').forEach(el => {
             el.addEventListener('click', () => {
                 const id = el.dataset.id;
-                const 输入 = el.dataset.输入;
+                const type = el.dataset.type;
                 const name = el.dataset.name;
-                switchChat(id, 输入, name);
+                switchChat(id, type, name);
             });
         });
         
@@ -888,20 +888,20 @@
         }, 5000);
     }
 
-    function 到ggleForm() {
+    function toggleForm() {
         isLoginMode = !isLoginMode;
         const title = document.getElementById('formTitle');
         const submitBtn = document.getElementById('submitBtn');
-        const 到ggleLink = document.getElementById('到ggleFormBtn');
+        const toggleLink = document.getElementById('toggleFormBtn');
         
         if (isLoginMode) {
             title.innerText = 'GitChat 登录';
             submitBtn.innerText = '登录';
-            到ggleLink.innerText = '没有账号？去注册';
+            toggleLink.innerText = '没有账号？去注册';
         } else {
             title.innerText = 'GitChat 注册';
             submitBtn.innerText = '注册';
-            到ggleLink.innerText = '已有账号？去登录';
+            toggleLink.innerText = '已有账号？去登录';
         }
         document.getElementById('formMessage').innerText = '';
         document.getElementById('formMessage').className = 'error';
@@ -929,7 +929,7 @@
                 isLoginMode = true;
                 document.getElementById('formTitle').innerText = 'GitChat 登录';
                 document.getElementById('submitBtn').innerText = '登录';
-                document.getElementById('到ggleFormBtn').innerText = '没有账号？去注册';
+                document.getElementById('toggleFormBtn').innerText = '没有账号？去注册';
                 document.getElementById('loginUsername').value = username;
                 document.getElementById('loginPassword').value = '';
             }
@@ -937,9 +937,9 @@
     }
 
     document.getElementById('submitBtn').onclick = handleSubmit;
-    document.getElementById('到ggleFormBtn').onclick = (e) => {
+    document.getElementById('toggleFormBtn').onclick = (e) => {
         e.preventDefault();
-        到ggleForm();
+        toggleForm();
     };
     document.getElementById('loginPassword').onkeypress = (e) => {
         if (e.key === 'Enter') handleSubmit();
