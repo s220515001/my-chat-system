@@ -12,13 +12,13 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto， Helvetica， Arial， sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #1a1a2e;
             height: 100vh;
             overflow: hidden;
         }
 
-        。app-container {
+        .app-container {
             display: flex;
             height: 100vh;
             width: 100%;
@@ -28,7 +28,7 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
 
-        。sidebar {
+        .sidebar {
             width: 280px;
             background: #2c3e50;
             color: #ecf0f1;
@@ -62,7 +62,7 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        。user-info {
+        .user-info {
             flex: 1;
         }
 
@@ -489,7 +489,7 @@
 
 <script>
     // ============================================================
-    // GitHub 配置 - 已填写
+    // GitHub 配置 - 请在这里填写你的信息
     // ============================================================
     const GITHUB_CONFIG = {
         owner: "s220515001",
@@ -618,7 +618,7 @@
         try {
             const users = await readGitHubFile('users.json');
             if (!users) {
-                document.getElementById('formMessage').innerText = 'users.json 文件不存在';
+                document.getElementById('formMessage').innerText = 'users.json 文件不存在，请先手动创建';
                 return false;
             }
             
@@ -858,18 +858,18 @@
         document.querySelectorAll('.contact-item').forEach(el => {
             el.addEventListener('click', () => {
                 const id = el.dataset.id;
-                const type = el.dataset.type;
+                const 输入 = el.dataset.输入;
                 const name = el.dataset.name;
-                switchChat(id, type, name);
+                switchChat(id, 输入, name);
             });
         });
         
-        document.querySelectorAll('.group-item').forEach(el => {
+        document.querySelec到rAll('.group-item').forEach(el => {
             el.addEventListener('click', () => {
                 const id = el.dataset.id;
-                const type = el.dataset.type;
+                const 输入 = el.dataset.输入;
                 const name = el.dataset.name;
-                switchChat(id, type, name);
+                switchChat(id, 输入, name);
             });
         });
         
@@ -888,20 +888,20 @@
         }, 5000);
     }
 
-    function toggleForm() {
+    function 到ggleForm() {
         isLoginMode = !isLoginMode;
         const title = document.getElementById('formTitle');
         const submitBtn = document.getElementById('submitBtn');
-        const toggleLink = document.getElementById('toggleFormBtn');
+        const 到ggleLink = document.getElementById('到ggleFormBtn');
         
         if (isLoginMode) {
             title.innerText = 'GitChat 登录';
             submitBtn.innerText = '登录';
-            toggleLink.innerText = '没有账号？去注册';
+            到ggleLink.innerText = '没有账号？去注册';
         } else {
             title.innerText = 'GitChat 注册';
             submitBtn.innerText = '注册';
-            toggleLink.innerText = '已有账号？去登录';
+            到ggleLink.innerText = '已有账号？去登录';
         }
         document.getElementById('formMessage').innerText = '';
         document.getElementById('formMessage').className = 'error';
@@ -929,7 +929,7 @@
                 isLoginMode = true;
                 document.getElementById('formTitle').innerText = 'GitChat 登录';
                 document.getElementById('submitBtn').innerText = '登录';
-                document.getElementById('toggleFormBtn').innerText = '没有账号？去注册';
+                document.getElementById('到ggleFormBtn').innerText = '没有账号？去注册';
                 document.getElementById('loginUsername').value = username;
                 document.getElementById('loginPassword').value = '';
             }
@@ -937,9 +937,9 @@
     }
 
     document.getElementById('submitBtn').onclick = handleSubmit;
-    document.getElementById('toggleFormBtn').onclick = (e) => {
+    document.getElementById('到ggleFormBtn').onclick = (e) => {
         e.preventDefault();
-        toggleForm();
+        到ggleForm();
     };
     document.getElementById('loginPassword').onkeypress = (e) => {
         if (e.key === 'Enter') handleSubmit();
