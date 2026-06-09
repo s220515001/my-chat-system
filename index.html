@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>GitChat - 私密聊天室</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #1a1a2e;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #f0f2f5;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #2c3e50;
+            color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        .user-profile {
+            padding: 24px 20px;
+            background: #1e2a36;
+            border-bottom: 1px solid #3a4a5a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .user-status {
+            font-size: 12px;
+            color: #95a5a6;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: #2ecc71;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .lists-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 0;
+        }
+
+        .list-header {
+            padding: 12px 20px 6px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7f8c8d;
+        }
+
+        .contact-item, .group-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            margin: 2px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .contact-item:hover, .group-item:hover {
+            background: #3a5468;
+        }
+
+        .contact-item.active, .group-item.active {
+            background: #1abc9c;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .contact-item.active .contact-name,
+        .group-item.active .group-name {
+            color: white;
+            font-weight: 500;
+        }
+
+        .contact-avatar, .group-avatar {
+            width: 40px;
+            height: 40px;
+            background: #4a627a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 500;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .contact-info, .group-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .contact-name, .group-name {
+            font-size: 15px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .contact-meta, .group-meta {
+            font-size: 11px;
+            color: #95a5a6;
+            margin-top: 2px;
+        }
+
+        .active .contact-meta, .active .group-meta {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+
+        .chat-header {
+            background: white;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .chat-contact-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-contact-name {
+            font-weight: 600;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .chat-contact-type {
+            font-size: 12px;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 20px;
+            color: #6c757d;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-image: radial-gradient(#e9ecef 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .message-row {
+            display: flex;
+            width: 100%;
+        }
+
+        .message-row.own {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            position: relative;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+        }
+
+        .message-row:not(.own) .message-bubble {
+            background: white;
+            border-top-left-radius: 4px;
+            color: #2d3436;
+            border: 1px solid #e2e8f0;
+        }
+
+        .message-row.own .message-bubble {
+            background: #1abc9c;
+            color: white;
+            border-top-right-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 10px;
+            margin-top: 4px;
+            opacity: 0.6;
+            text-align: right;
+        }
+
+        .message-row:not(.own) .message-time {
+            text-align: left;
+            color: #7f8c8d;
+        }
+
+        .input-area {
+            background: white;
+            border-top: 1px solid #e9ecef;
+            padding: 16px 24px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .input-area input:focus {
+            border-color: #1abc9c;
+            box-shadow: 0 0 0 2px rgba(26,188,156,0.2);
+        }
+
+        .send-btn {
+            background: #1abc9c;
+            border: none;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+        .send-btn:hover {
+            background: #16a085;
+            transform: scale(0.98);
+        }
+
+        .empty-chat {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #adb5bd;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: white;
+            padding: 32px;
+            border-radius: 24px;
+            width: 320px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .login-box h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: #1abc9c;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .login-box .error {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .lists-scroll::-webkit-scrollbar, .messages-container::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .lists-scroll::-webkit-scrollbar-track {
+            background: #1e2a36;
+        }
+
+        .lists-scroll::-webkit-scrollbar-thumb {
+            background: #4a627a;
+            border-radius: 5px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: #e9ecef;
+        }
+
+        @media (max-width: 640px) {
+            .sidebar {
+                width: 80px;
+            }
+            .user-info, .contact-info, .group-info, .list-header span:not(.emoji-header) {
+                display: none;
+            }
+            .contact-item, .group-item {
+                justify-content: center;
+                padding: 12px 0;
+            }
+            .user-profile {
+                justify-content: center;
+            }
+            .list-header {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container" id="app" style="display: none;">
+    <div class="sidebar">
+        <div class="user-profile">
+            <div class="avatar" id="currentUserAvatar">我</div>
+            <div class="user-info">
+                <div class="user-name" id="currentUserName"></div>
+                <div class="user-status"><span class="online-dot"></span> 在线 · 私密聊天</div>
+            </div>
+        </div>
+
+        <div class="lists-scroll">
+            <div class="list-header">
+                <span>我的好友</span>
+            </div>
+            <div id="friendsList"></div>
+
+            <div class="list-header" style="margin-top: 16px;">
+                <span>我的群聊</span>
+            </div>
+            <div id="groupsList"></div>
+        </div>
+    </div>
+
+    <div class="chat-area">
+        <div class="chat-header" id="chatHeader">
+            <div class="chat-contact-info">
+                <div class="chat-contact-name" id="chatContactName">请选择一个好友或群聊</div>
+                <div class="chat-contact-type" id="chatContactType">私聊</div>
+            </div>
+        </div>
+
+        <div class="messages-container" id="messagesContainer">
+            <div class="empty-chat">
+                <span>聊天记录</span>
+                <span>点击左侧联系人，开始聊天</span>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off">
+            <button class="send-btn" id="sendBtn">发送</button>
+        </div>
+    </div>
+</div>
+
+<div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+        <h3>GitChat 登录</h3>
+        <input type="text" id="loginUsername" placeholder="用户名" autocomplete="off">
+        <input type="password" id="loginPassword" placeholder="密码">
+        <button id="loginBtn">登录</button>
+        <div class="error" id="loginError"></div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // 请在这里填写你的 GitHub 配置
+    // ============================================================
+    const GITHUB_CONFIG = {
+        owner: "s220515001",      // 你的 GitHub 用户名，例如 "zhangsan"
+        repo: "my-chat-system"，       // 你的仓库名，例如 "my-chat-system"
+        token: "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",      // 你的 Personal Access Token，例如 "ghp_xxxxxx"
+        branch: "main"  // 分支名，main 或 master
+    };
+    // ============================================================
+
+    let currentUser = null;
+    let friendsData = [];
+    let groupsData = [];
+    let messagesDB = {};
+
+    // 辅助函数：Base64 解码
+    function decodeBase64(str) {
+        try {
+            return decodeURIComponent(escape(atob(str)));
+        } catch(e) {
+            return atob(str);
+        }
+    }
+
+    // 读取 GitHub 文件
+    async function readGitHubFile(filename) {
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `token ${GITHUB_CONFIG.token}`,
+                'User-Agent': 'GitChat-App'
+            }
+        });
+        
+        if (response.status === 404) {
+            return null;
+        }
+        
+        if (!response.ok) {
+            throw new Error(`读取文件失败: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const content = decodeBase64(data.content);
+        return JSON.parse(content);
+    }
+
+    // 写入 GitHub 文件
+    async function writeGitHubFile(filename, content, commitMessage) {
+        // 先读取当前文件获取 SHA
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
+        let sha = null;
+        
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${GITHUB_CONFIG.token}`,
+                    'User-Agent': 'GitChat-App'
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                sha = data.sha;
+            }
+        } catch(e) {
+            // 文件不存在，sha 保持 null
+        }
+        
+        const body = {
+            message: commitMessage,
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
+            branch: GITHUB_CONFIG.branch
+        };
+        
+        if (sha) {
+            body.sha = sha;
+        }
+        
+        const writeResponse = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_CONFIG.token}`,
+                'Content-Type': 'application/json',
+                'User-Agent': 'GitChat-App'
+            },
+            body: JSON.stringify(body)
+        });
+        
+        if (!writeResponse.ok) {
+            throw new Error(`写入文件失败: ${writeResponse.status}`);
+        }
+        
+        return await writeResponse.json();
+    }
+
+    // 验证登录
+    async function login(username, password) {
+        try {
+            const users = await readGitHubFile('users.json');
+            if (!users) {
+                document.getElementById('loginError').innerText = 'users.json 文件不存在';
+                return false;
+            }
+            
+            if (users[username] && users[username].password === password) {
+                currentUser = {
+                    username: username,
+                    nickname: users[username].nickname || username,
+                    avatar: users[username].nickname ? users[username].nickname.charAt(0) : username.charAt(0)
+                };
+                return true;
+            }
+            document.getElementById('loginError').innerText = '用户名或密码错误';
+            return false;
+        } catch(e) {
+            console.error(e);
+            document.getElementById('loginError').innerText = '读取用户数据失败';
+            return false;
+        }
+    }
+
+    // 加载好友列表
+    async function loadFriends() {
+        try {
+            const friendships = await readGitHubFile('friendships.json');
+            if (!friendships) return [];
+            
+            const myFriends = [];
+            for (const friendship of friendships) {
+                if (friendship.user1 === currentUser.username) {
+                    myFriends.push(friendship.user2);
+                } else if (friendship.user2 === currentUser.username) {
+                    myFriends.push(friendship.user1);
+                }
+            }
+            
+            const users = await readGitHubFile('users.json');
+            if (!users) return [];
+            
+            return myFriends.map(friendUsername => ({
+                id: `friend_${friendUsername}`,
+                username: friendUsername,
+                nickname: users[friendUsername]?.nickname || friendUsername,
+                avatar: users[friendUsername]?.nickname ? users[friendUsername].nickname.charAt(0) : friendUsername.charAt(0),
+                type: 'friend'
+            }));
+        } catch(e) {
+            console.error(e);
+            return [];
+        }
+    }
+
+    // 加载群聊列表
+    async function loadGroups() {
+        try {
+            const groups = await readGitHubFile('groups.json');
+            if (!groups) return [];
+            
+            const myGroups = [];
+            for (const group of groups) {
+                if (group.members && group.members.includes(currentUser.username)) {
+                    myGroups.push({
+                        id: `group_${group.id}`,
+                        groupId: group.id,
+                        groupName: group.groupName,
+                        avatar: group.groupName.charAt(0),
+                        type: 'group',
+                        members: group.members
+                    });
+                }
+            }
+            return myGroups;
+        } catch(e) {
+            console.error(e);
+            return [];
+        }
+    }
+
+    // 加载消息
+    async function loadMessages() {
+        try {
+            const messages = await readGitHubFile('messages.json');
+            if (!messages) return {};
+            
+            const db = {};
+            for (const msg of messages) {
+                const key = msg.targetId;
+                if (!db[key]) {
+                    db[key] = [];
+                }
+                db[key].push(msg);
+            }
+            return db;
+        } catch(e) {
+            console.error(e);
+            return {};
+        }
+    }
+
+    // 保存消息
+    async function saveMessage(targetId, targetType, content) {
+        try {
+            const allMessages = await readGitHubFile('messages.json');
+            const messagesList = allMessages || [];
+            
+            const newMsg = {
+                id: Date.now(),
+                from: currentUser.username,
+                fromNickname: currentUser.nickname,
+                targetId: targetId,
+                targetType: targetType,
+                content: content,
+                timestamp: Date.now()
+            };
+            
+            messagesList.push(newMsg);
+            await writeGitHubFile('messages.json', messagesList, `新消息: ${currentUser.username} -> ${targetId}`);
+            return true;
+        } catch(e) {
+            console.error(e);
+            return false;
+        }
+    }
+
+    // 渲染界面
+    function renderFriendsList(friends) {
+        const container = document.getElementById('friendsList');
+        if (!container) return;
+        
+        if (friends.length === 0) {
+            container.innerHTML = '<div style="padding: 12px 20px; color:#95a5a6; font-size:13px;">暂无好友</div>';
+            return;
+        }
+        
+        container.innerHTML = friends.map(friend => `
+            <div class="contact-item" data-id="${friend.id}" data-type="friend" data-name="${friend.nickname}" data-username="${friend.username}">
+                <div class="contact-avatar">${friend.avatar}</div>
+                <div class="contact-info">
+                    <div class="contact-name">${friend.nickname}</div>
+                    <div class="contact-meta">@${friend.username}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderGroupsList(groups) {
+        const container = document.getElementById('groupsList');
+        if (!container) return;
+        
+        if (groups.length === 0) {
+            container.innerHTML = '<div style="padding: 12px 20px; color:#95a5a6; font-size:13px;">暂无群聊</div>';
+            return;
+        }
+        
+        container.innerHTML = groups.map(group => `
+            <div class="group-item" data-id="${group.id}" data-type="group" data-name="${group.groupName}" data-group-id="${group.groupId}">
+                <div class="group-avatar">${group.avatar}</div>
+                <div class="group-info">
+                    <div class="group-name">${group.groupName}</div>
+                    <div class="group-meta">${group.members.length} 人 · 群聊</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    let activeChat = { id: null, type: null, name: null };
+
+    function renderMessages() {
+        const container = document.getElementById('messagesContainer');
+        if (!activeChat.id) {
+            container.innerHTML = '<div class="empty-chat"><span>聊天记录</span><span>点击左侧联系人，开始聊天</span></div>';
+            return;
+        }
+        
+        const messages = messagesDB[activeChat.id] || [];
+        if (messages.length === 0) {
+            container.innerHTML = '<div class="empty-chat"><span>暂无消息</span><span>发一条消息吧</span></div>';
+            return;
+        }
+        
+        const html = messages.map(msg => {
+            const isOwn = msg.from === currentUser.username;
+            const timeStr = new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            const senderName = msg.fromNickname;
+            const showSenderLabel = (activeChat.type === 'group' && !isOwn) ? `<div style="font-size: 11px; margin-bottom: 4px; color: #7f8c8d; margin-left: 4px;">${senderName}</div>` : '';
+            return `
+                <div class="message-row ${isOwn ? 'own' : ''}">
+                    <div class="message-bubble">
+                        ${activeChat.type === 'group' && !isOwn ? showSenderLabel : ''}
+                        <div>${escapeHtml(msg.content)}</div>
+                        <div class="message-time">${timeStr}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        container.innerHTML = html;
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    async function switchChat(chatId, chatType, displayName) {
+        activeChat = { id: chatId, type: chatType, name: displayName };
+        document.getElementById('chatContactName').innerText = displayName;
+        document.getElementById('chatContactType').innerText = chatType === 'friend' ? '私密好友' : '群聊';
+        renderMessages();
+    }
+
+    async function sendMessage() {
+        const inputEl = document.getElementById('messageInput');
+        const content = inputEl.value.trim();
+        if (!content || !activeChat.id) return;
+        
+        const success = await saveMessage(activeChat.id, activeChat.type, content);
+        if (success) {
+            // 重新加载消息
+            messagesDB = await loadMessages();
+            renderMessages();
+            inputEl.value = '';
+        } else {
+            alert('发送失败，请重试');
+        }
+    }
+
+    async function initAfterLogin() {
+        document.getElementById('currentUserName').innerText = currentUser.nickname;
+        document.getElementById('currentUserAvatar').innerText = currentUser.avatar;
+        
+        friendsData = await loadFriends();
+        groupsData = await loadGroups();
+        messagesDB = await loadMessages();
+        
+        renderFriendsList(friendsData);
+        renderGroupsList(groupsData);
+        
+        // 绑定点击事件
+        document.querySelectorAll('.contact-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const id = el.dataset.id;
+                const type = el.dataset.type;
+                const name = el.dataset.name;
+                switchChat(id, type, name);
+            });
+        });
+        
+        document.querySelectorAll('.group-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const id = el.dataset.id;
+                const type = el.dataset.type;
+                const name = el.dataset.name;
+                switchChat(id, type, name);
+            });
+        });
+        
+        document.getElementById('sendBtn').onclick = sendMessage;
+        document.getElementById('messageInput').onkeypress = (e) => {
+            if (e.key === 'Enter') sendMessage();
+        };
+        
+        // 定时刷新消息
+        setInterval(async () => {
+            if (currentUser) {
+                messagesDB = await loadMessages();
+                if (activeChat.id) {
+                    renderMessages();
+                }
+            }
+        }, 5000);
+    }
+
+    document.getElementById('loginBtn').onclick = async () => {
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        
+        if (!username || !password) {
+            document.getElementById('loginError').innerText = '请输入用户名和密码';
+            return;
+        }
+        
+        const success = await login(username, password);
+        if (success) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            await initAfterLogin();
+        }
+    };
+</script>
+</body>
+</html>
