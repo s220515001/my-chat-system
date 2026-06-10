@@ -494,7 +494,6 @@
     const GITHUB_CONFIG = {
         owner: "s220515001",
         repo: "my-chat-system",
-        token: "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",
         branch: "main"
     };
     // ============================================================
@@ -514,70 +513,59 @@
     }
 
     async function readGitHubFile(filename) {
-        const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `token ${GITHUB_CONFIG.token}`,
-                'User-Agent': 'GitChat-App'
-            }
-        });
-        
-        if (response.status === 404) {
-            return null;
-        }
-        
-        if (!response.ok) {
-            throw new Error(`读取文件失败: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        const content = decodeBase64(data.content);
-        return JSON.parse(content);
+    const url = `https://my-chat-system.vercel.app/api/github?filename=${filename}`;
+    const response = await fetch(url);
+    
+    if (response.status === 404) {
+        return null;
     }
+    
+    if (!response.ok) {
+        throw new Error(`读取文件失败: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const content = decodeBase64(data.content);
+    return JSON.parse(content);
+}
 
     async function writeGitHubFile(filename, content, commitMessage) {
-        const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
-        let sha = null;
-        
-        try {
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `token ${GITHUB_CONFIG.token}`,
-                    'User-Agent': 'GitChat-App'
-                }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                sha = data.sha;
-            }
-        } catch(e) {}
-        
-        const body = {
-            message: commitMessage,
-            content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
-            branch: GITHUB_CONFIG.branch
-        };
-        
-        if (sha) {
-            body.sha = sha;
+    const url = `https://my-chat-system.vercel.app/api/github?filename=${filename}`;
+    let sha = null;
+    
+    // 先读取文件获取 SHA
+    try {
+        const readResponse = await fetch(url);
+        if (readResponse.ok) {
+            const data = await readResponse.json();
+            sha = data.sha;
         }
-        
-        const writeResponse = await fetch(url, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `token ${GITHUB_CONFIG.token}`,
-                'Content-Type': 'application/json',
-                'User-Agent': 'GitChat-App'
-            },
-            body: JSON.stringify(body)
-        });
-        
-        if (!writeResponse.ok) {
-            throw new Error(`写入文件失败: ${writeResponse.status}`);
-        }
-        
-        return await writeResponse.json();
+    } catch(e) {}
+    
+    const body = {
+        message: commitMessage,
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
+        branch: "main"
+    };
+    
+    if (sha) {
+        body.sha = sha;
     }
+    
+    const writeResponse = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    });
+    
+    if (!writeResponse.ok) {
+        throw new Error(`写入文件失败: ${writeResponse.status}`);
+    }
+    
+    return await writeResponse.json();
+}
 
     async function register(username, password) {
         if (!username || username.length < 3) {
