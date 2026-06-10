@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": 1781101615931,
+    "from": "test1",
+    "fromNickname": "test1",
+    "targetId": "friend_test2",
+    "targetType": "friend",
+    "content": "hi！",
+    "timestamp": 1781101615931
+  }
+]
