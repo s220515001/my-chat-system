@@ -489,13 +489,17 @@
 
 <script>
     // ============================================================
-    // GitHub 配置 - 请在这里填写你的信息
+    // GitHub 配置
     // ============================================================
     const GITHUB_CONFIG = {
         owner: "s220515001",
         repo: "my-chat-system",
         branch: "main"
     };
+    
+    // JSONBin 配置（存储 GitHub Token）
+    const JSONBIN_URL = "https://api.jsonbin.io/v3/b/6a296f88da38895dfea6e9b3/latest";
+    
     // ============================================================
 
     let currentUser = null;
@@ -503,6 +507,22 @@
     let groupsData = [];
     let messagesDB = {};
     let isLoginMode = true;
+    let cachedToken = null;
+
+    // 从 JSONBin 获取 GitHub Token
+    async function getGitHubToken() {
+        if (cachedToken) return cachedToken;
+        
+        try {
+            const response = await fetch(JSONBIN_URL);
+            const data = await response.json();
+            cachedToken = data.record.github_token;
+            return cachedToken;
+        } catch(e) {
+            console.error('获取 Token 失败:', e);
+            throw new Error('无法获取访问令牌');
+        }
+    }
 
     function decodeBase64(str) {
         try {
@@ -513,59 +533,72 @@
     }
 
     async function readGitHubFile(filename) {
-    const url = `https://my-chat-system.vercel.app/api/github?filename=${filename}`;
-    const response = await fetch(url);
-    
-    if (response.status === 404) {
-        return null;
+        const token = await getGitHubToken();
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'User-Agent': 'GitChat-App'
+            }
+        });
+        
+        if (response.status === 404) {
+            return null;
+        }
+        
+        if (!response.ok) {
+            throw new Error(`读取文件失败: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const content = decodeBase64(data.content);
+        return JSON.parse(content);
     }
-    
-    if (!response.ok) {
-        throw new Error(`读取文件失败: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    const content = decodeBase64(data.content);
-    return JSON.parse(content);
-}
 
     async function writeGitHubFile(filename, content, commitMessage) {
-    const url = `https://my-chat-system.vercel.app/api/github?filename=${filename}`;
-    let sha = null;
-    
-    // 先读取文件获取 SHA
-    try {
-        const readResponse = await fetch(url);
-        if (readResponse.ok) {
-            const data = await readResponse.json();
-            sha = data.sha;
+        const token = await getGitHubToken();
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
+        let sha = null;
+        
+        try {
+            const readResponse = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'User-Agent': 'GitChat-App'
+                }
+            });
+            if (readResponse.ok) {
+                const data = await readResponse.json();
+                sha = data.sha;
+            }
+        } catch(e) {}
+        
+        const body = {
+            message: commitMessage,
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
+            branch: GITHUB_CONFIG.branch
+        };
+        
+        if (sha) {
+            body.sha = sha;
         }
-    } catch(e) {}
-    
-    const body = {
-        message: commitMessage,
-        content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
-        branch: "main"
-    };
-    
-    if (sha) {
-        body.sha = sha;
+        
+        const writeResponse = await fetch(url, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json',
+                'User-Agent': 'GitChat-App'
+            },
+            body: JSON.stringify(body)
+        });
+        
+        if (!writeResponse.ok) {
+            throw new Error(`写入文件失败: ${writeResponse.status}`);
+        }
+        
+        return await writeResponse.json();
     }
-    
-    const writeResponse = await fetch(url, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-    });
-    
-    if (!writeResponse.ok) {
-        throw new Error(`写入文件失败: ${writeResponse.status}`);
-    }
-    
-    return await writeResponse.json();
-}
 
     async function register(username, password) {
         if (!username || username.length < 3) {
