@@ -606,10 +606,12 @@
         branch: "main"
     };
     
-    // JSONBin 配置
+    // JSONBin 配置（Token 存储）
     const TOKEN_BIN_ID = "6a296f88da38895dfea6e9b3";
-    const MESSAGES_BIN_ID = "6a29e52af5f4af5e29db564b";  // 请替换成你创建的消息 Bin ID
-    const JSONBIN_MASTER_KEY = "$2a$10$z8cBDEjFq7EZq3CLqTOKw.qUjqn1YHpC0cUnVcwCudo/78TY888ka";
+    
+    // 消息 Gist 配置
+    const MESSAGES_GIST_ID = "07ba593a56998e7c9ec7651702ec9c53";
+    const MESSAGES_GIST_URL = `https://gist.githubusercontent.com/${GITHUB_CONFIG.owner}/${MESSAGES_GIST_ID}/raw/messages.json`;
     
     // ============================================================
 
@@ -714,51 +716,78 @@
         return await writeResponse.json();
     }
 
-    // ========== 消息存储到 JSONBin ==========
-    async function loadMessagesFromJSONBin() {
+    // ========== 消息存储到 GitHub Gist ==========
+    async function loadMessages() {
         try {
-            const response = await fetch(`https://api.jsonbin.io/v3/b/${MESSAGES_BIN_ID}/latest`);
+            const response = await fetch(MESSAGES_GIST_URL);
             if (response.status === 404) {
                 return [];
             }
-            const data = await response.json();
-            return data.record.messages || [];
+            const messages = await response.json();
+            return Array.isArray(messages) ? messages : [];
         } catch(e) {
             console.error('加载消息失败:', e);
             return [];
         }
     }
 
-    async function saveMessageToJSONBin(message) {
-    try {
-        // 先获取当前消息列表
-        const getResponse = await fetch(`https://api.jsonbin.io/v3/b/${MESSAGES_BIN_ID}/latest`);
-        const getData = await getResponse.json();
-        const messages = getData.record.messages || [];
-        messages.push(message);
-
-        // 写入新消息列表，带上完整的 Headers
-        const putResponse = await fetch(`https://api.jsonbin.io/v3/b/${MESSAGES_BIN_ID}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': JSONBIN_MASTER_KEY,
-                'Accept': 'application/json'  // 加上这一行
-            },
-            body: JSON.stringify({ messages: messages })
-        });
-
-        if (!putResponse.ok) {
-            const errorText = await putResponse.text();
-            console.error('JSONBin 写入失败详情:', errorText);
+    async function saveMessages(messages) {
+        try {
+            const token = await getGitHubToken();
+            
+            // 先获取当前 Gist 信息，得到文件的 SHA
+            const gistInfoUrl = `https://api.github.com/gists/${MESSAGES_GIST_ID}`;
+            const gistResponse = await fetch(gistInfoUrl, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'User-Agent': 'GitChat-App'
+                }
+            });
+            const gistData = await gistResponse.json();
+            const fileSha = gistData.files['messages.json'].sha;
+            
+            // 更新 Gist 内容
+            const updateUrl = `https://api.github.com/gists/${MESSAGES_GIST_ID}`;
+            const updateBody = {
+                files: {
+                    'messages.json': {
+                        content: JSON.stringify(messages, null, 2),
+                        sha: fileSha
+                    }
+                }
+            };
+            
+            const updateResponse = await fetch(updateUrl, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'GitChat-App'
+                },
+                body: JSON.stringify(updateBody)
+            });
+            
+            if (!updateResponse.ok) {
+                console.error('更新 Gist 失败:', await updateResponse.text());
+                return false;
+            }
+            return true;
+        } catch(e) {
+            console.error('保存消息失败:', e);
             return false;
         }
-        return true;
-    } catch (e) {
-        console.error('保存消息失败:', e);
-        return false;
     }
-}
+
+    async function sendMessageToStorage(message) {
+        const allMessages = await loadMessages();
+        allMessages.push(message);
+        return await saveMessages(allMessages);
+    }
+
+    async function getMessagesForChat(chatId) {
+        const allMessages = await loadMessages();
+        return allMessages.filter(msg => msg.targetId === chatId);
+    }
 
     // ========== 用户相关 ==========
     async function register(username, password) {
@@ -977,11 +1006,6 @@
     }
 
     // ========== 消息相关 ==========
-    async function getMessagesForChat(chatId) {
-        const allMessages = await loadMessagesFromJSONBin();
-        return allMessages.filter(msg => msg.targetId === chatId);
-    }
-
     async function sendMessageToChat(chatId, chatType, content) {
         const newMsg = {
             id: Date.now(),
@@ -993,7 +1017,7 @@
             timestamp: Date.now()
         };
         
-        const success = await saveMessageToJSONBin(newMsg);
+        const success = await sendMessageToStorage(newMsg);
         if (success && activeChat.id === chatId) {
             await refreshCurrentMessages();
         }
