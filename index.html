@@ -611,7 +611,6 @@
     
     // 消息 Gist 配置
     const MESSAGES_GIST_ID = "07ba593a56998e7c9ec7651702ec9c53";
-    const MESSAGES_GIST_URL = `https://gist.githubusercontent.com/${GITHUB_CONFIG.owner}/${MESSAGES_GIST_ID}/raw/messages.json`;
     
     // ============================================================
 
@@ -719,7 +718,8 @@
     // ========== 消息存储到 GitHub Gist ==========
     async function loadMessages() {
         try {
-            const response = await fetch(MESSAGES_GIST_URL);
+            const url = `https://gist.githubusercontent.com/${GITHUB_CONFIG.owner}/${MESSAGES_GIST_ID}/raw/messages.json?t=${Date.now()}`;
+            const response = await fetch(url);
             if (response.status === 404) {
                 return [];
             }
@@ -735,7 +735,7 @@
         try {
             const token = await getGitHubToken();
             
-            // 先获取当前 Gist 信息，得到文件的 SHA
+            // 获取当前 Gist 信息，得到文件的 SHA
             const gistInfoUrl = `https://api.github.com/gists/${MESSAGES_GIST_ID}`;
             const gistResponse = await fetch(gistInfoUrl, {
                 headers: {
@@ -743,10 +743,16 @@
                     'User-Agent': 'GitChat-App'
                 }
             });
+            
+            if (!gistResponse.ok) {
+                console.error('获取 Gist 信息失败:', await gistResponse.text());
+                return false;
+            }
+            
             const gistData = await gistResponse.json();
             const fileSha = gistData.files['messages.json'].sha;
             
-            // 更新 Gist 内容
+            // 更新 Gist
             const updateUrl = `https://api.github.com/gists/${MESSAGES_GIST_ID}`;
             const updateBody = {
                 files: {
@@ -778,7 +784,7 @@
         }
     }
 
-    async function sendMessageToStorage(message) {
+    async function addMessage(message) {
         const allMessages = await loadMessages();
         allMessages.push(message);
         return await saveMessages(allMessages);
@@ -1005,7 +1011,7 @@
         }
     }
 
-    // ========== 消息相关 ==========
+    // ========== 消息发送 ==========
     async function sendMessageToChat(chatId, chatType, content) {
         const newMsg = {
             id: Date.now(),
@@ -1017,17 +1023,12 @@
             timestamp: Date.now()
         };
         
-        const success = await sendMessageToStorage(newMsg);
+        const success = await addMessage(newMsg);
         if (success && activeChat.id === chatId) {
-            await refreshCurrentMessages();
+            const updatedMessages = await getMessagesForChat(chatId);
+            renderMessages(updatedMessages);
         }
         return success;
-    }
-
-    async function refreshCurrentMessages() {
-        if (!activeChat.id) return;
-        const messages = await getMessagesForChat(activeChat.id);
-        renderMessages(messages);
     }
 
     // ========== UI 渲染 ==========
@@ -1291,14 +1292,14 @@
         document.getElementById('createGroupBtn').onclick = showCreateGroupModal;
         document.getElementById('logoutBtn').onclick = logout;
         
-        // 启动消息轮询
+        // 启动消息轮询（2秒一次）
         if (pollInterval) clearInterval(pollInterval);
         pollInterval = setInterval(async () => {
             if (currentUser && activeChat.id) {
                 const messages = await getMessagesForChat(activeChat.id);
                 renderMessages(messages);
             }
-        }, 3000);
+        }, 2000);
     }
 
     function toggleForm() {
