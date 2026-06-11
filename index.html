@@ -88,6 +88,21 @@
             display: inline-block;
         }
 
+        .logout-btn {
+            background: #e74c3c;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 12px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
         .action-buttons {
             padding: 12px 16px;
             display: flex;
@@ -189,22 +204,6 @@
             margin-top: 2px;
         }
 
-        .group-item .add-member-btn {
-            background: #1abc9c;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            color: white;
-            font-size: 10px;
-            cursor: pointer;
-            opacity: 0;
-            transition: 0.2s;
-        }
-
-        .group-item:hover .add-member-btn {
-            opacity: 1;
-        }
-
         .active .contact-meta, .active .group-meta {
             color: rgba(255,255,255,0.7);
         }
@@ -244,6 +243,16 @@
             padding: 2px 8px;
             border-radius: 20px;
             color: #6c757d;
+        }
+
+        .add-member-header-btn {
+            background: #1abc9c;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
         }
 
         .messages-container {
@@ -515,6 +524,9 @@
             .list-header {
                 text-align: center;
             }
+            .logout-btn {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -527,6 +539,7 @@
                 <div class="user-name" id="currentUserName"></div>
                 <div class="user-status"><span class="online-dot"></span> 在线 · 私密聊天</div>
             </div>
+            <button class="logout-btn" id="logoutBtn">退出</button>
         </div>
 
         <div class="action-buttons">
@@ -553,7 +566,7 @@
                 <div class="chat-contact-name" id="chatContactName">请选择一个好友或群聊</div>
                 <div class="chat-contact-type" id="chatContactType">私聊</div>
             </div>
-            <button class="action-btn" id="addMemberBtn" style="display: none; width: auto; padding: 6px 12px;">添加成员</button>
+            <button class="add-member-header-btn" id="addMemberBtn" style="display: none;">添加成员</button>
         </div>
 
         <div class="messages-container" id="messagesContainer">
@@ -595,7 +608,8 @@
     
     // JSONBin 配置
     const TOKEN_BIN_ID = "6a296f88da38895dfea6e9b3";
-    const MESSAGES_BIN_ID = "6a29e52af5f4af5e29db564b";  // 请替换成你创建的消息 Bin ID
+    const MESSAGES_BIN_ID = "你的消息BinID";  // 请替换成你创建的消息 Bin ID
+    const JSONBIN_MASTER_KEY = "$2a$10$z8cBDEjFq7EZq3CLqTOKw.qUjqn1YHpC0cUnVcwCudo/78TY888ka";
     
     // ============================================================
 
@@ -722,13 +736,19 @@
             const messages = data.record.messages || [];
             messages.push(message);
             
-            await fetch(`https://api.jsonbin.io/v3/b/${MESSAGES_BIN_ID}`, {
+            const putResponse = await fetch(`https://api.jsonbin.io/v3/b/${MESSAGES_BIN_ID}`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_MASTER_KEY
                 },
                 body: JSON.stringify({ messages: messages })
             });
+            
+            if (!putResponse.ok) {
+                console.error('写入失败:', await putResponse.text());
+                return false;
+            }
             return true;
         } catch(e) {
             console.error('保存消息失败:', e);
@@ -1218,6 +1238,12 @@
         document.getElementById('closeModal').onclick = () => modal.remove();
     }
 
+    // ========== 退出登录 ==========
+    function logout() {
+        localStorage.removeItem('chatUser');
+        location.reload();
+    }
+
     // ========== 初始化和轮询 ==========
     async function initAfterLogin() {
         document.getElementById('currentUserName').innerText = currentUser.nickname;
@@ -1235,6 +1261,7 @@
         };
         document.getElementById('addFriendBtn').onclick = showAddFriendModal;
         document.getElementById('createGroupBtn').onclick = showCreateGroupModal;
+        document.getElementById('logoutBtn').onclick = logout;
         
         // 启动消息轮询
         if (pollInterval) clearInterval(pollInterval);
