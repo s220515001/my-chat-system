@@ -721,15 +721,28 @@
         return await writeResponse.json();
     }
 
-    // ========== 消息存储到 GitHub Gist ==========
+    // ========== 消息存储到 GitHub Gist（使用 API，无缓存） ==========
     async function loadMessages() {
         try {
-            const url = `https://gist.githubusercontent.com/${GITHUB_CONFIG.owner}/${MESSAGES_GIST_ID}/raw/messages.json?t=${Date.now()}`;
-            const response = await fetch(url);
-            if (response.status === 404) {
+            const token = await getGitHubToken();
+            const url = `https://api.github.com/gists/${MESSAGES_GIST_ID}`;
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'User-Agent': 'GitChat-App'
+                }
+            });
+            
+            if (!response.ok) {
+                console.error('获取 Gist 失败:', response.status);
                 return [];
             }
-            const messages = await response.json();
+            
+            const data = await response.json();
+            const content = data.files['messages.json']?.content;
+            if (!content) return [];
+            
+            const messages = JSON.parse(content);
             return Array.isArray(messages) ? messages : [];
         } catch(e) {
             console.error('加载消息失败:', e);
@@ -741,6 +754,7 @@
         try {
             const token = await getGitHubToken();
             
+            // 获取当前 Gist 信息，得到文件的 SHA
             const gistInfoUrl = `https://api.github.com/gists/${MESSAGES_GIST_ID}`;
             const gistResponse = await fetch(gistInfoUrl, {
                 headers: {
@@ -796,25 +810,7 @@
 
     async function getMessagesForChat(chatId) {
         const allMessages = await loadMessages();
-        // 兼容旧格式：如果当前会话ID是统一格式，也匹配旧格式？暂时只匹配新格式
-        // 为了不丢失旧消息，可以同时匹配两种格式
-        return allMessages.filter(msg => {
-            if (msg.targetId === chatId) return true;
-            // 兼容旧私聊格式：如果当前会话是统一ID，且消息targetId是 friend_xxx 形式，尝试匹配
-            if (chatId.startsWith('chat_') && msg.targetId && msg.targetId.startsWith('friend_')) {
-                // 提取两个用户名
-                const parts = chatId.split('_');
-                if (parts.length === 3) {
-                    const user1 = parts[1];
-                    const user2 = parts[2];
-                    if ((msg.targetId === `friend_${user1}` && msg.from === user2) ||
-                        (msg.targetId === `friend_${user2}` && msg.from === user1)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        });
+        return allMessages.filter(msg => msg.targetId === chatId);
     }
 
     // ========== 用户相关 ==========
@@ -902,7 +898,7 @@
             if (!users) return [];
             
             return myFriends.map(friendUsername => ({
-                id: getPrivateChatId(currentUser.username, friendUsername),  // 统一会话ID
+                id: getPrivateChatId(currentUser.username, friendUsername),
                 username: friendUsername,
                 nickname: users[friendUsername]?.nickname || friendUsername,
                 avatar: users[friendUsername]?.nickname ? users[friendUsername].nickname.charAt(0) : friendUsername.charAt(0),
@@ -1040,15 +1036,6 @@
     // ========== 消息发送 ==========
     async function sendMessageToChat(chatId, chatType, content) {
         let targetId = chatId;
-        // 如果是私聊并且 chatId 已经是统一格式，直接使用；否则如果是旧格式，转换为统一格式（但通常不会）
-        if (chatType === 'friend' && !chatId.startsWith('chat_')) {
-            // 兼容旧好友ID（如 friend_test2），提取对方用户名
-            const match = chatId.match(/friend_(.+)/);
-            if (match) {
-                const friendName = match[1];
-                targetId = getPrivateChatId(currentUser.username, friendName);
-            }
-        }
         
         const newMsg = {
             id: Date.now(),
