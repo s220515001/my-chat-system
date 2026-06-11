@@ -1,3 +1,10 @@
 [
-  {"user1": "test1", "user2": "test2"}
+  {
+    "user1": "test1",
+    "user2": "test2"
+  },
+  {
+    "user1": "test3",
+    "user2": "test1"
+  }
 ]
