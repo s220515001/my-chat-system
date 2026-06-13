@@ -1592,6 +1592,9 @@ function tryResumeAudio() {
     if (!username) return;
     window.location.href = `personalpage.html?user=${encodeURIComponent(username)}`;
 }
+function openSettings() {
+    window.location.href = `setting.html`;
+}
 let userAvatarsCache = {};
 // 加载所有用户头像缓存
         (function() {
@@ -3270,6 +3273,7 @@ function rebindMessageEvents() {
             <td>${users[u].nickname || u}</td>
             <td>
                 <button class="admin-btn chat-user-btn" data-username="${u}">聊天</button>
+                <button class="admin-btn login-as-btn" data-username="${u}" data-nickname="${users[u].nickname || u}" style="background:#9b59b6;">模拟登录</button>
                 <button class="admin-btn edit-profile-btn" data-username="${u}" style="background:#3498db;">编辑资料</button>
                 <button class="admin-btn warning reset-pwd-btn" data-username="${u}">重置密码</button>
                 <button class="admin-btn change-nick-btn" data-username="${u}">改昵称</button>
@@ -3277,7 +3281,7 @@ function rebindMessageEvents() {
                 <button class="admin-btn danger delete-user-btn" data-username="${u}">删除</button>
                 <button class="admin-btn manage-friends-btn" data-username="${u}">好友管理</button>
             </td>
-        </tr>`;
+        </table>`;
     }
     html += '</tbody></table>';
     content.innerHTML = html;
@@ -3337,7 +3341,7 @@ function rebindMessageEvents() {
             alert('已修改'); }
     });
     
-    // 修改昵称按钮（保留）
+    // 修改昵称按钮
     document.querySelectorAll('.change-nick-btn').forEach(b => b.onclick = async () => {
         const uname = b.dataset.username;
         const nick = prompt('新昵称');
@@ -3352,7 +3356,18 @@ function rebindMessageEvents() {
     // 聊天按钮
     document.querySelectorAll('.chat-user-btn').forEach(b => b.onclick = () => startAdminChat(b.dataset.username));
     
-    // ========== 新增：编辑资料按钮（完整编辑） ==========
+    // ========== 新增：模拟登录按钮 ==========
+    document.querySelectorAll('.login-as-btn').forEach(btn => {
+        btn.onclick = () => {
+            const username = btn.dataset.username;
+            const nickname = btn.dataset.nickname;
+            // 在新标签页中打开，通过 URL 参数传递用户信息
+            // 注意：由于跨标签页无法直接共享 localStorage，我们通过 URL 参数传递
+            window.open(`index.html?login_as=${encodeURIComponent(username)}&nickname=${encodeURIComponent(nickname)}`, '_blank');
+        };
+    });
+    
+    // 编辑资料按钮
     document.querySelectorAll('.edit-profile-btn').forEach(btn => {
         btn.onclick = () => showEditProfileModal(btn.dataset.username);
     });
@@ -3897,21 +3912,92 @@ document.querySelectorAll('.chat-group-btn').forEach(b => {
                 }
             });
 
-            const saved = localStorage.getItem('chatUser');
-            if (saved) {
-                currentUser = JSON.parse(saved);
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                initTheme();
-                if (currentUser.isAdmin) {
-                    document.getElementById('sidebar').style.display = 'none';
-                    document.getElementById('chatArea').style.display = 'none';
-                    initAdminPanel();
-                } else {
-                    document.getElementById('adminPanel').style.display = 'none';
-                    initAfterLogin();
-                }
+            // ========== 模拟登录处理 ==========
+async function handleImpersonateLogin() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const loginAs = urlParams.get('login_as');
+    const nickname = urlParams.get('nickname');
+    
+    if (loginAs && !localStorage.getItem('chatUser')) {
+        try {
+            const users = await readGitHubFile('users.json') || {};
+            if (users[loginAs]) {
+                const userData = users[loginAs];
+                const impersonateUser = {
+                    username: loginAs,
+                    nickname: nickname || userData.nickname || loginAs,
+                    avatar: userData.avatar || (userData.nickname || loginAs).charAt(0),
+                    isAdmin: false,
+                    isImpersonating: true
+                };
+                localStorage.setItem('chatUser', JSON.stringify(impersonateUser));
+                window.location.href = window.location.pathname;
+                return true;
             }
+        } catch(e) {
+            console.error('模拟登录失败', e);
+        }
+    }
+    return false;
+}
+
+function showImpersonateBanner() {
+    const banner = document.createElement('div');
+    banner.id = 'impersonateBanner';
+    banner.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #f39c12;
+        color: #fff;
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-size: 13px;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        cursor: pointer;
+    `;
+    banner.innerHTML = `
+        <span>🔓 您正在以 ${currentUser.nickname} 的身份模拟登录</span>
+        <button id="exitImpersonateBtn" style="background: #e74c3c; border: none; color: white; padding: 4px 12px; border-radius: 20px; cursor: pointer;">退出模拟</button>
+    `;
+    document.body.appendChild(banner);
+    
+    document.getElementById('exitImpersonateBtn').onclick = () => {
+        localStorage.removeItem('chatUser');
+        window.location.href = window.location.pathname;
+    };
+}
+
+// 初始化
+(async function initApp() {
+    await handleImpersonateLogin();
+    
+    const saved = localStorage.getItem('chatUser');
+    if (saved) {
+        currentUser = JSON.parse(saved);
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        initTheme();
+        if (currentUser.isAdmin) {
+            document.getElementById('sidebar').style.display = 'none';
+            document.getElementById('chatArea').style.display = 'none';
+            initAdminPanel();
+        } else {
+            document.getElementById('adminPanel').style.display = 'none';
+            await initAfterLogin();
+            if (currentUser.isImpersonating) {
+                showImpersonateBanner();
+            }
+        }
+    } else {
+        document.getElementById('loginOverlay').style.display = 'flex';
+    }
+})();
 
             document.getElementById('submitBtn').onclick = handleSubmit;
             document.getElementById('toggleFormBtn').onclick = (e) => {
