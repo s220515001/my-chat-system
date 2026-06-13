@@ -3196,7 +3196,33 @@ function rebindMessageEvents() {
                 bindSendEvents();
                 bindImageEvents();
             }
-
+async function startAdminGroupChat(groupId, groupName) {
+    const chatId = `group_${groupId}`;
+    activeChat = { id: chatId, type: 'group', name: groupName };
+    
+    // 切换到聊天界面
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('sidebar').style.display = 'none';
+    document.getElementById('chatArea').style.display = 'flex';
+    document.getElementById('backToAdminBtn').style.display = 'inline-block';
+    document.getElementById('addMemberBtn').style.display = 'none';  // 管理员不需要添加成员按钮
+    document.getElementById('chatContactName').innerText = groupName;
+    document.getElementById('chatContactType').innerText = '群聊 (管理员)';
+    
+    const msgs = await getMessagesForChatCached(chatId);
+    if (msgs.length) {
+        lastSeenTimestamps[chatId] = Math.max(...msgs.map(m => m.timestamp));
+    } else {
+        lastSeenTimestamps[chatId] = Date.now();
+    }
+    saveLastSeen();
+    unreadCounts[chatId] = 0;
+    saveUnread();
+    
+    renderMessages(msgs);
+    bindSendEvents();
+    bindImageEvents();
+}
             document.getElementById('backToAdminBtn').addEventListener('click', async () => {
                 document.getElementById('chatArea').style.display = 'none';
                 document.getElementById('adminPanel').style.display = 'flex';
@@ -3267,6 +3293,7 @@ function rebindMessageEvents() {
                     html += `<tr>
                         <td>${g.id}</td><td>${g.groupName}</td><td>${g.owner||g.members[0]}</td><td>${g.members.length}</td>
                         <td>
+    <button class="admin-btn chat-group-btn" data-gid="${g.id}" data-gname="${g.groupName}">聊天</button>
                             <button class="admin-btn view-members-btn" data-gid="${g.id}">成员</button>
                             <button class="admin-btn change-name-btn" data-gid="${g.id}">改名</button>
                             <button class="admin-btn warning transfer-btn" data-gid="${g.id}">转让</button>
@@ -3367,6 +3394,10 @@ function rebindMessageEvents() {
                     alert('已转让');
                     renderAdminGroups();
                 });
+// 管理员群聊按钮
+document.querySelectorAll('.chat-group-btn').forEach(b => {
+    b.onclick = () => startAdminGroupChat(b.dataset.gid, b.dataset.gname);
+});
             }
 
             // ========== 初始化入口 ==========
