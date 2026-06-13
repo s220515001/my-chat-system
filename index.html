@@ -438,15 +438,34 @@
             user-select: none;
         }
 
-        .message-row {
-            display: flex;
-            width: 100%;
-            position: relative;
-        }
+        /* 消息头像样式 */
+.message-row {
+    display: flex;
+    width: 100%;
+    position: relative;
+    align-items: flex-start;
+}
 
-        .message-row.own {
-            justify-content: flex-end;
-        }
+.message-row.own {
+    justify-content: flex-end;
+}
+
+.msg-avatar {
+    transition: transform 0.2s;
+}
+
+.msg-avatar:hover {
+    transform: scale(1.05);
+}
+
+.msg-sender-name {
+    transition: opacity 0.2s;
+}
+
+.msg-sender-name:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+}
 
         .message-bubble {
             max-width: 70%;
@@ -1566,6 +1585,15 @@
     </div>
 
     <script>
+function tryResumeAudio() {
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+            }
+		function viewUserProfile(username) {
+    if (!username) return;
+    window.location.href = `personalpage.html?user=${encodeURIComponent(username)}`;
+}
+let userAvatarsCache = {};
+// 加载所有用户头像缓存
         (function() {
             // ========== 配置 ==========
             const GITHUB_CONFIG = { owner: "s220515001", repo: "my-chat-system", branch: "main" };
@@ -1573,6 +1601,7 @@
             const MESSAGES_GIST_ID = "07ba593a56998e7c9ec7651702ec9c53";
             const ADMIN_CREDENTIALS = { username: "admin", password: "admin114514" };
 
+	    
             let currentUser = null;
             let friendsData = [];
             let groupsData = [];
@@ -1596,9 +1625,18 @@
             let longPressTimer = null;
             let longPressStartPos = null;
 
-            function tryResumeAudio() {
-                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+            async function loadUserAvatarsCache() {
+    try {
+        const users = await readGitHubFile('users.json') || {};
+        for (const [username, userData] of Object.entries(users)) {
+            if (userData.avatar) {
+                userAvatarsCache[username] = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${userData.avatar}`;
             }
+        }
+    } catch(e) {
+        console.error('加载用户头像缓存失败', e);
+    }
+}
 
             function playNotificationSound() {
                 try {
@@ -2559,95 +2597,140 @@
     updateUnreadBadges();
 }
             function renderMessages(msgs) {
-                const container = document.getElementById('messagesContainer');
-                if (!activeChat.id) {
-                    container.innerHTML =
-                        '<div class="empty-chat"><span>聊天记录</span><span>点击左侧联系人开始聊天</span></div>';
-                    return;
-                }
-                // 过滤本地删除的消息
-                const filteredMsgs = msgs.filter(m => !localDeletedIds.includes(m.id));
-                if (!filteredMsgs.length) {
-                    container.innerHTML = '<div class="empty-chat"><span>暂无消息</span><span>发一条消息吧</span></div>';
-                    return;
-                }
-                container.innerHTML = filteredMsgs.map(m => {
-                    const isOwn = m.from === currentUser.username;
-                    const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit',
-                        minute: '2-digit' });
-                    const isAdminMsg = m.from === 'admin';
-                    let bubbleClass = '';
-                    let senderLabel = '';
-                    if (isAdminMsg && (activeChat.type === 'group' || activeChat.id.startsWith(
-                            'chat_admin_'))) {
-                        bubbleClass = ' admin-msg';
-                        senderLabel =
-                            '<div class="admin-sender-label" style="font-size:11px;margin-bottom:4px;">管理员</div>';
-                    } else if (activeChat.type === 'group' && !isOwn) {
-                        senderLabel =
-                            `<div style="font-size:11px;color:#7f8c8d;margin-bottom:4px;">${escapeHtml(m.fromNickname || m.from)}</div>`;
-                    }
-                    // 撤回消息
-                    if (m.type === 'recalled') {
-                        const recalledText = isOwn ? '你撤回了一条消息' : '对方撤回了一条消息';
-                        return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
-                            <div class="message-bubble recalled-bubble">
-                                ${recalledText}
-                                <div class="message-time">${time}</div>
-                            </div>
-                        </div>`;
-                    }
-                    // 送达状态图标（仅自己发送的消息）
-                    let statusIconHtml = '';
-                    if (isOwn && m.status) {
-                        statusIconHtml = renderStatusIcon(m.status, m.clientMsgId);
-                    }
-                    // 引用气泡
-                    let quoteHtml = '';
-                    if (m.quote) {
-                        const quoteClass = isOwn ? 'quote-block' : 'quote-block';
-                        quoteHtml = `
-                            <div class="${quoteClass}" data-quote-msg-id="${m.quote.messageId}" onclick="event.stopPropagation();window._scrollToQuotedMessage && window._scrollToQuotedMessage(${m.quote.messageId});" title="点击跳转到原消息">
-                                <div class="quote-attribution">${escapeHtml(m.quote.from)}：</div>
-                                <div class="quote-content-preview">${escapeHtml(m.quote.contentPreview)}</div>
-                            </div>`;
-                    }
-                    // 图片消息
-                    if (m.type === 'image') {
-                        const thumbSrc = m.thumbnail || m.content;
-                        const fullSrc = m.content;
-                        const imgHtml = `
-                            <img src="${thumbSrc}" 
-                                 class="msg-image" 
-                                 data-full="${fullSrc}"
-                                 alt="图片"
-                                 loading="lazy"
-                                 onclick="event.stopPropagation();window._showImagePreview && window._showImagePreview(this.dataset.full);"
-                                 onerror="this.outerHTML='<span class=\\'msg-image-placeholder\\'>🖼️</span>'">
-                        `;
-                        return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${escapeHtml(JSON.stringify(m))}">
-                            <div class="message-bubble image-bubble${bubbleClass}">
-                                ${senderLabel}
-                                ${quoteHtml}
-                                ${imgHtml}
-                                <div class="message-time">${statusIconHtml}${time}</div>
-                            </div>
-                        </div>`;
-                    }
-                    // 文字消息
-                    return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${escapeHtml(JSON.stringify(m))}">
-                        <div class="message-bubble${bubbleClass}">
-                            ${senderLabel}
-                            ${quoteHtml}
-                            <div>${escapeHtml(m.content)}</div>
-                            <div class="message-time">${statusIconHtml}${time}</div>
-                        </div>
-                    </div>`;
-                }).join('');
-                container.scrollTop = container.scrollHeight;
-                rebindMessageEvents();
+    const container = document.getElementById('messagesContainer');
+    if (!activeChat.id) {
+        container.innerHTML = '<div class="empty-chat"><span>聊天记录</span><span>点击左侧联系人开始聊天</span></div>';
+        return;
+    }
+    
+    const filteredMsgs = msgs.filter(m => !localDeletedIds.includes(m.id));
+    if (!filteredMsgs.length) {
+        container.innerHTML = '<div class="empty-chat"><span>暂无消息</span><span>发一条消息吧</span></div>';
+        return;
+    }
+    
+    container.innerHTML = filteredMsgs.map(m => {
+        const isOwn = m.from === currentUser.username;
+        const time = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const isAdminMsg = m.from === 'admin';
+        
+        // 获取发送者的头像URL
+        let senderAvatarUrl = null;
+        let senderNickname = m.fromNickname || m.from;
+        
+        // 从缓存中获取头像（需要在全局维护一个 userAvatars 缓存）
+        if (userAvatarsCache && userAvatarsCache[m.from]) {
+            senderAvatarUrl = userAvatarsCache[m.from];
+        }
+        
+        let avatarHtml = '';
+        if (!isOwn && activeChat.type === 'group') {
+            // 群聊中显示对方头像
+            if (senderAvatarUrl) {
+                avatarHtml = `<div class="msg-avatar" style="width:36px;height:36px;flex-shrink:0;margin-right:8px;cursor:pointer;" onclick="viewUserProfile('${m.from}')">
+                    <img src="${senderAvatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:white;\\'>${senderNickname.charAt(0)}</div>'">
+                </div>`;
+            } else {
+                avatarHtml = `<div class="msg-avatar" style="width:36px;height:36px;flex-shrink:0;margin-right:8px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:white;cursor:pointer;" onclick="viewUserProfile('${m.from}')">${senderNickname.charAt(0)}</div>`;
             }
-
+        }
+        
+        let bubbleClass = '';
+        let senderLabel = '';
+        if (isAdminMsg && (activeChat.type === 'group' || activeChat.id.startsWith('chat_admin_'))) {
+            bubbleClass = ' admin-msg';
+            senderLabel = '<div class="admin-sender-label" style="font-size:11px;margin-bottom:4px;">管理员</div>';
+        } else if (activeChat.type === 'group' && !isOwn) {
+            senderLabel = `<div class="msg-sender-name" style="font-size:11px;color:#7f8c8d;margin-bottom:4px;cursor:pointer;" onclick="viewUserProfile('${m.from}')">${escapeHtml(senderNickname)}</div>`;
+        }
+        
+        // 撤回消息
+        if (m.type === 'recalled') {
+            const recalledText = isOwn ? '你撤回了一条消息' : '对方撤回了一条消息';
+            return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
+                <div class="message-bubble recalled-bubble">
+                    ${recalledText}
+                    <div class="message-time">${time}</div>
+                </div>
+            </div>`;
+        }
+        
+        let statusIconHtml = '';
+        if (isOwn && m.status) {
+            statusIconHtml = renderStatusIcon(m.status, m.clientMsgId);
+        }
+        
+        let quoteHtml = '';
+        if (m.quote) {
+            quoteHtml = `
+                <div class="quote-block" data-quote-msg-id="${m.quote.messageId}" onclick="event.stopPropagation();window._scrollToQuotedMessage && window._scrollToQuotedMessage(${m.quote.messageId});" title="点击跳转到原消息">
+                    <div class="quote-attribution">${escapeHtml(m.quote.from)}：</div>
+                    <div class="quote-content-preview">${escapeHtml(m.quote.contentPreview)}</div>
+                </div>`;
+        }
+        
+        // 图片消息
+        if (m.type === 'image') {
+            const thumbSrc = m.thumbnail || m.content;
+            const fullSrc = m.content;
+            const imgHtml = `
+                <img src="${thumbSrc}" 
+                     class="msg-image" 
+                     data-full="${fullSrc}"
+                     alt="图片"
+                     loading="lazy"
+                     onclick="event.stopPropagation();window._showImagePreview && window._showImagePreview(this.dataset.full);"
+                     onerror="this.outerHTML='<span class=\\'msg-image-placeholder\\'>图片加载失败</span>'">
+            `;
+            
+            if (!isOwn && activeChat.type === 'group') {
+                return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
+                    ${avatarHtml}
+                    <div class="message-bubble image-bubble${bubbleClass}">
+                        ${senderLabel}
+                        ${quoteHtml}
+                        ${imgHtml}
+                        <div class="message-time">${statusIconHtml}${time}</div>
+                    </div>
+                </div>`;
+            } else {
+                return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
+                    <div class="message-bubble image-bubble${bubbleClass}">
+                        ${senderLabel}
+                        ${quoteHtml}
+                        ${imgHtml}
+                        <div class="message-time">${statusIconHtml}${time}</div>
+                    </div>
+                </div>`;
+            }
+        }
+        
+        // 文字消息
+        if (!isOwn && activeChat.type === 'group') {
+            return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
+                ${avatarHtml}
+                <div class="message-bubble${bubbleClass}">
+                    ${senderLabel}
+                    ${quoteHtml}
+                    <div>${escapeHtml(m.content)}</div>
+                    <div class="message-time">${statusIconHtml}${time}</div>
+                </div>
+            </div>`;
+        } else {
+            return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
+                <div class="message-bubble${bubbleClass}">
+                    ${senderLabel}
+                    ${quoteHtml}
+                    <div>${escapeHtml(m.content)}</div>
+                    <div class="message-time">${statusIconHtml}${time}</div>
+                </div>
+            </div>`;
+        }
+    }).join('');
+    
+    container.scrollTop = container.scrollHeight;
+    rebindMessageEvents();
+}
             function renderStatusIcon(status, clientMsgId) {
                 switch (status) {
                     case 'pending':
@@ -2707,20 +2790,20 @@ function rebindMessageEvents() {
     // 右键菜单
     bindContextMenuEvents();
 
-    // 图片预览（委托）
+    // 图片预览和引用跳转
     container.addEventListener('click', function(e) {
         const img = e.target.closest('.msg-image');
         if (img && img.dataset.full && window._showImagePreview) {
             e.stopPropagation();
             window._showImagePreview(img.dataset.full);
         }
-        // 引用跳转
+        
         const quoteBlock = e.target.closest('.quote-block');
         if (quoteBlock && quoteBlock.dataset.quoteMsgId && window._scrollToQuotedMessage) {
             e.stopPropagation();
             window._scrollToQuotedMessage(parseInt(quoteBlock.dataset.quoteMsgId));
         }
-        // 失败图标重试
+        
         const icon = e.target.closest('.msg-status-icon');
         if (icon && icon.dataset.status === 'failed' && icon.dataset.clientMsgId) {
             e.stopPropagation();
@@ -2728,20 +2811,18 @@ function rebindMessageEvents() {
         }
     });
 
-    // 送达状态 tooltip（委托）
     container.addEventListener('mouseenter', function(e) {
         const icon = e.target.closest('.msg-status-icon');
         if (icon) showStatusTooltip(e, icon.dataset.status);
     }, true);
+    
     container.addEventListener('mouseleave', function(e) {
         const icon = e.target.closest('.msg-status-icon');
         if (icon) hideStatusTooltip();
     }, true);
 
-    // 移动端长按（保留原有逻辑，但确保使用委托）
     bindLongPressEvents();
-}
-            function bindContextMenuEvents() {
+}            function bindContextMenuEvents() {
     const container = document.getElementById('messagesContainer');
     if (!container) return;
 
@@ -3488,34 +3569,51 @@ document.querySelectorAll('.chat-group-btn').forEach(b => {
 
             // ========== 初始化入口 ==========
             async function initAfterLogin() {
-                document.getElementById('currentUserName').innerText = currentUser.nickname;
-                document.getElementById('currentUserAvatar').innerText = currentUser.avatar;
-                loadUnread();
-                loadLastSeen();
-                loadLocalDeleted();
-                friendsData = await loadFriends();
-                groupsData = await loadGroups();
-                renderFriendsList(friendsData);
-                renderGroupsList(groupsData);
-                bindSendEvents();
-                bindImageEvents();
-                document.getElementById('addFriendBtn').onclick = showAddFriendModal;
-                document.getElementById('createGroupBtn').onclick = showCreateGroupModal;
-                document.getElementById('logoutBtn').onclick = logout;
-                // 初始化已存在消息的状态
-                const all = await loadMessages();
-                for (const m of all) {
-                    if (m.from === currentUser.username && m.status && (m.status === 'pending' || m.status ===
-                            'stored')) {
-                        if (Date.now() - m.timestamp > 30000) {
-                            m.status = 'delivered';
-                        }
-                    }
-                }
-                await saveMessages(all);
-                if (pollInterval) clearInterval(pollInterval);
-                pollInterval = setInterval(pollMessages, 2000);
+    document.getElementById('currentUserName').innerText = currentUser.nickname;
+    document.getElementById('currentUserAvatar').innerText = currentUser.avatar;
+    loadUnread();
+    loadLastSeen();
+    loadLocalDeleted();
+    
+    // 加载用户头像缓存
+    await loadUserAvatarsCache();
+    
+    friendsData = await loadFriends();
+    groupsData = await loadGroups();
+    renderFriendsList(friendsData);
+    renderGroupsList(groupsData);
+    bindSendEvents();
+    bindImageEvents();
+    document.getElementById('addFriendBtn').onclick = showAddFriendModal;
+    document.getElementById('createGroupBtn').onclick = showCreateGroupModal;
+    document.getElementById('logoutBtn').onclick = logout;
+    
+    // 检查URL参数，直接打开指定聊天
+    const urlParams = new URLSearchParams(window.location.search);
+    const chatUser = urlParams.get('chat');
+    const chatType = urlParams.get('type');
+    if (chatUser && chatType === 'friend') {
+        // 查找好友并打开聊天
+        const friend = friendsData.find(f => f.username === chatUser);
+        if (friend) {
+            setTimeout(() => {
+                switchChat(friend.id, 'friend', friend.nickname);
+            }, 500);
+        }
+    }
+    
+    const all = await loadMessages();
+    for (const m of all) {
+        if (m.from === currentUser.username && m.status && (m.status === 'pending' || m.status === 'stored')) {
+            if (Date.now() - m.timestamp > 30000) {
+                m.status = 'delivered';
             }
+        }
+    }
+    await saveMessages(all);
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(pollMessages, 2000);
+}
 
             async function handleSubmit() {
                 const username = document.getElementById('loginUsername').value.trim();

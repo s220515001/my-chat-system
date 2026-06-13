@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>个人主页 - GitChat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #6c757d;
+            --text-muted: #95a5a6;
+            --border-color: #e9ecef;
+            --primary-color: #1abc9c;
+            --primary-hover: #16a085;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --text-muted: #6a7d8e;
+            --border-color: #2a2a4a;
+            --primary-color: #16a085;
+            --primary-hover: #1abc9c;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* 头部 */
+        .header {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .back-btn {
+            background: transparent;
+            border: none;
+            color: var(--primary-color);
+            font-size: 24px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(26, 188, 156, 0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        /* 主页内容 */
+        .profile-card {
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            padding: 32px 24px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-nickname {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .profile-username {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .profile-bio {
+            font-size: 14px;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 16px 0;
+            line-height: 1.5;
+        }
+
+        .profile-info {
+            text-align: left;
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+            margin-top: 8px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* 操作按钮 */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .error {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--danger-color);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            z-index: 1000;
+            animation: toastIn 0.3s ease;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+            .profile-avatar {
+                width: 100px;
+                height: 100px;
+                font-size: 40px;
+            }
+            .profile-nickname {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" id="backBtn">&larr;</button>
+            <h1>个人主页</h1>
+        </div>
+        
+        <div id="profileContent">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+
+    <script>
+        const GITHUB_CONFIG = {
+            owner: "s220515001",
+            repo: "my-chat-system",
+            branch: "main"
+        };
+        
+        let currentUser = null;
+        let targetUserId = null;
+        
+        function showToast(message) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+        
+        async function getGitHubToken() {
+            const TOKEN_BIN_ID = "6a296f88da38895dfea6e9b3";
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${TOKEN_BIN_ID}/latest`);
+            const data = await res.json();
+            return data.record.github_token;
+        }
+        
+        function decodeBase64(str) {
+            try { return decodeURIComponent(escape(atob(str))); } catch(e) { return atob(str); }
+        }
+        
+        async function readGitHubFile(filename) {
+            const token = await getGitHubToken();
+            const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
+            const res = await fetch(url, { headers: { Authorization: `token ${token}` } });
+            if (res.status === 404) return null;
+            if (!res.ok) throw new Error(`读取失败: ${res.status}`);
+            const data = await res.json();
+            return JSON.parse(decodeBase64(data.content));
+        }
+        
+        function getAvatarUrl(avatarPath) {
+            if (!avatarPath) return null;
+            if (avatarPath.startsWith('http')) return avatarPath;
+            return `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${avatarPath}`;
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '未设置';
+            const date = new Date(dateStr);
+            return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+        }
+        
+        function getGenderText(gender) {
+            if (gender === 'male') return '男';
+            if (gender === 'female') return '女';
+            return '保密';
+        }
+        
+        async function loadProfile() {
+            const container = document.getElementById('profileContent');
+            
+            try {
+                const users = await readGitHubFile('users.json') || {};
+                const targetUser = users[targetUserId];
+                
+                if (!targetUser) {
+                    container.innerHTML = '<div class="error">用户不存在</div>';
+                    return;
+                }
+                
+                const avatarUrl = getAvatarUrl(targetUser.avatar);
+                const isSelf = currentUser && currentUser.username === targetUserId;
+                
+                let avatarHtml = '';
+                if (avatarUrl) {
+                    avatarHtml = `<img src="${avatarUrl}" alt="头像" onerror="this.style.display='none';this.parentElement.innerHTML='${(targetUser.nickname || targetUserId).charAt(0)}'">`;
+                } else {
+                    avatarHtml = (targetUser.nickname || targetUserId).charAt(0);
+                }
+                
+                const html = `
+                    <div class="profile-card">
+                        <div class="profile-avatar">
+                            ${avatarHtml}
+                        </div>
+                        <div class="profile-nickname">${escapeHtml(targetUser.nickname || targetUserId)}</div>
+                        <div class="profile-username">@${targetUserId}</div>
+                        <div class="profile-bio">${escapeHtml(targetUser.bio || '这个人很懒，什么都没写...')}</div>
+                        <div class="profile-info">
+                            <div class="info-row">
+                                <span class="info-label">性别</span>
+                                <span class="info-value">${getGenderText(targetUser.gender)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">生日</span>
+                                <span class="info-value">${formatDate(targetUser.birthday)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">注册时间</span>
+                                <span class="info-value">${targetUser.registerTime ? new Date(targetUser.registerTime).toLocaleDateString() : '未知'}</span>
+                            </div>
+                        </div>
+                        ${!isSelf ? `
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" id="sendMsgBtn">发送消息</button>
+                            <button class="btn btn-secondary" id="addFriendBtn">添加好友</button>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                container.innerHTML = html;
+                
+                if (!isSelf) {
+                    document.getElementById('sendMsgBtn').onclick = () => {
+                        window.location.href = `index.html?chat=${targetUserId}&type=friend`;
+                    };
+                    document.getElementById('addFriendBtn').onclick = () => {
+                        // 触发添加好友
+                        addFriendFromProfile();
+                    };
+                }
+                
+            } catch(e) {
+                console.error(e);
+                container.innerHTML = '<div class="error">加载失败，请稍后重试</div>';
+            }
+        }
+        
+        async function addFriendFromProfile() {
+            if (!currentUser) {
+                showToast('请先登录');
+                return;
+            }
+            
+            if (targetUserId === currentUser.username) {
+                showToast('不能添加自己为好友');
+                return;
+            }
+            
+            try {
+                const fs = await readGitHubFile('friendships.json') || [];
+                if (fs.some(f => (f.user1 === currentUser.username && f.user2 === targetUserId) || 
+                                 (f.user1 === targetUserId && f.user2 === currentUser.username))) {
+                    showToast('已经是好友了');
+                    return;
+                }
+                
+                const users = await readGitHubFile('users.json') || {};
+                if (!users[targetUserId]) {
+                    showToast('用户不存在');
+                    return;
+                }
+                
+                fs.push({ user1: currentUser.username, user2: targetUserId });
+                await writeGitHubFile('friendships.json', fs, `添加好友: ${currentUser.username} ↔ ${targetUserId}`);
+                showToast('好友添加成功');
+                
+                // 更新按钮状态
+                const btn = document.getElementById('addFriendBtn');
+                if (btn) {
+                    btn.textContent = '已添加';
+                    btn.disabled = true;
+                    btn.style.opacity = '0.6';
+                }
+            } catch(e) {
+                console.error(e);
+                showToast('添加失败，请重试');
+            }
+        }
+        
+        async function writeGitHubFile(filename, content, msg) {
+            const token = await getGitHubToken();
+            const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
+            let sha = null;
+            try {
+                const r = await fetch(url, { headers: { Authorization: `token ${token}` } });
+                if (r.ok) sha = (await r.json()).sha;
+            } catch(e) {}
+            
+            const body = {
+                message: msg,
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
+                branch: GITHUB_CONFIG.branch
+            };
+            if (sha) body.sha = sha;
+            
+            const wr = await fetch(url, {
+                method: 'PUT',
+                headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!wr.ok) throw new Error(`写入失败: ${wr.status}`);
+            return await wr.json();
+        }
+        
+        function escapeHtml(s) {
+            if (!s || typeof s !== 'string') return '';
+            return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+        }
+        
+        function initTheme() {
+            const saved = localStorage.getItem('settingTheme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = saved || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+        
+        async function init() {
+            initTheme();
+            
+            // 获取当前登录用户
+            const savedUser = localStorage.getItem('chatUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+            }
+            
+            // 从 URL 获取目标用户ID
+            const urlParams = new URLSearchParams(window.location.search);
+            targetUserId = urlParams.get('user');
+            
+            if (!targetUserId) {
+                document.getElementById('profileContent').innerHTML = '<div class="error">缺少用户参数</div>';
+                return;
+            }
+            
+            await loadProfile();
+            
+            document.getElementById('backBtn').onclick = () => {
+                if (document.referrer && document.referrer.includes('index.html')) {
+                    window.location.href = 'index.html';
+                } else {
+                    window.history.back();
+                }
+            };
+        }
+        
+        init();
+    </script>
+</body>
+</html>
