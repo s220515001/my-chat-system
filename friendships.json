@@ -34,5 +34,9 @@
   {
     "user1": "suhaochen",
     "user2": "test2"
+  },
+  {
+    "user1": "test1",
+    "user2": "suhaochen"
   }
 ]
