@@ -2557,7 +2557,7 @@
                     // 撤回消息
                     if (m.type === 'recalled') {
                         const recalledText = isOwn ? '你撤回了一条消息' : '对方撤回了一条消息';
-                        return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${escapeHtml(JSON.stringify(m))}">
+                        return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
                             <div class="message-bubble recalled-bubble">
                                 ${recalledText}
                                 <div class="message-time">${time}</div>
@@ -2612,9 +2612,7 @@
                     </div>`;
                 }).join('');
                 container.scrollTop = container.scrollHeight;
-                bindContextMenuEvents();
-                bindLongPressEvents();
-                bindStatusIconEvents();
+                rebindMessageEvents();
             }
 
             function renderStatusIcon(status, clientMsgId) {
@@ -2669,58 +2667,81 @@
                     });
                 });
             }
+function rebindMessageEvents() {
+    const container = document.getElementById('messagesContainer');
+    if (!container) return;
 
+    // 右键菜单
+    bindContextMenuEvents();
+
+    // 图片预览（委托）
+    container.addEventListener('click', function(e) {
+        const img = e.target.closest('.msg-image');
+        if (img && img.dataset.full && window._showImagePreview) {
+            e.stopPropagation();
+            window._showImagePreview(img.dataset.full);
+        }
+        // 引用跳转
+        const quoteBlock = e.target.closest('.quote-block');
+        if (quoteBlock && quoteBlock.dataset.quoteMsgId && window._scrollToQuotedMessage) {
+            e.stopPropagation();
+            window._scrollToQuotedMessage(parseInt(quoteBlock.dataset.quoteMsgId));
+        }
+        // 失败图标重试
+        const icon = e.target.closest('.msg-status-icon');
+        if (icon && icon.dataset.status === 'failed' && icon.dataset.clientMsgId) {
+            e.stopPropagation();
+            retryMessage(icon.dataset.clientMsgId);
+        }
+    });
+
+    // 送达状态 tooltip（委托）
+    container.addEventListener('mouseenter', function(e) {
+        const icon = e.target.closest('.msg-status-icon');
+        if (icon) showStatusTooltip(e, icon.dataset.status);
+    }, true);
+    container.addEventListener('mouseleave', function(e) {
+        const icon = e.target.closest('.msg-status-icon');
+        if (icon) hideStatusTooltip();
+    }, true);
+
+    // 移动端长按（保留原有逻辑，但确保使用委托）
+    bindLongPressEvents();
+}
             function bindContextMenuEvents() {
-                const container = document.getElementById('messagesContainer');
-                // 移除旧的事件（通过克隆节点）
-                const newContainer = container.cloneNode(true);
-                container.parentNode.replaceChild(newContainer, container);
-                // 重新获取引用
-                const messagesContainer = document.getElementById('messagesContainer');
-                // 恢复滚动位置
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                // 绑定右键事件
-                messagesContainer.addEventListener('contextmenu', function(e) {
-                    const messageRow = e.target.closest('.message-row');
-                    if (!messageRow) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    hideContextMenu();
-                    let msgData = null;
-                    try {
-                        const rawData = messageRow.dataset.messageData;
-                        if (rawData) msgData = JSON.parse(rawData);
-                    } catch (ex) {}
-                    if (!msgData) return;
-                    showContextMenu(e, msgData);
-                });
-                // 点击消息气泡关闭菜单（但不阻止其他操作）
-                messagesContainer.addEventListener('click', function(e) {
-                    if (activeContextMenu && !e.target.closest('.context-menu')) {
-                        hideContextMenu();
-                    }
-                });
-                // 恢复图片预览功能
-                messagesContainer.querySelectorAll('.msg-image').forEach(img => {
-                    img.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        if (window._showImagePreview && this.dataset.full) {
-                            window._showImagePreview(this.dataset.full);
-                        }
-                    });
-                });
-                // 恢复引用跳转
-                messagesContainer.querySelectorAll('.quote-block').forEach(qb => {
-                    qb.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        const msgId = parseInt(this.dataset.quoteMsgId);
-                        if (msgId && window._scrollToQuotedMessage) {
-                            window._scrollToQuotedMessage(msgId);
-                        }
-                    });
-                });
-            }
+    const container = document.getElementById('messagesContainer');
+    if (!container) return;
 
+    // 移除旧的监听器（避免重复绑定）
+    container.removeEventListener('contextmenu', container._ctxMenuHandler);
+    container.removeEventListener('click', container._ctxMenuClickHandler);
+
+    // 右键菜单
+    const ctxHandler = function(e) {
+        const messageRow = e.target.closest('.message-row');
+        if (!messageRow) return;
+        e.preventDefault();
+        hideContextMenu();
+        try {
+            const rawData = messageRow.dataset.messageData;
+            if (rawData) {
+                const msgData = JSON.parse(decodeURIComponent(rawData));
+                showContextMenu(e, msgData);
+            }
+        } catch (ex) {}
+    };
+    container._ctxMenuHandler = ctxHandler;
+    container.addEventListener('contextmenu', ctxHandler);
+
+    // 点击其他区域关闭菜单
+    const clickHandler = function(e) {
+        if (activeContextMenu && !e.target.closest('.context-menu')) {
+            hideContextMenu();
+        }
+    };
+    container._ctxMenuClickHandler = clickHandler;
+    container.addEventListener('click', clickHandler);
+}
             function bindLongPressEvents() {
                 const container = document.getElementById('messagesContainer');
                 container.addEventListener('touchstart', function(e) {
