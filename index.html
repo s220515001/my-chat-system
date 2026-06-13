@@ -3254,95 +3254,115 @@ function rebindMessageEvents() {
             }
 
             async function renderAdminUsers() {
-                const content = document.getElementById('adminContent');
-                content.innerHTML = '<p>加载中...</p>';
-                const users = await readGitHubFile('users.json') || {};
-                const list = Object.keys(users).filter(u => u !== ADMIN_CREDENTIALS.username);
-                let html = `
-                    <div class="admin-input-group">
-                        <input id="newUsername" placeholder="新用户名"><input type="password" id="newPassword" placeholder="密码">
-                        <button class="admin-btn" id="createUserBtn">创建用户</button>
-                    </div>
-                    <table class="admin-table"><thead><tr><th>用户名</th><th>昵称</th><th>操作</th></tr></thead><tbody>`;
-                for (const u of list) {
-                    html += `<tr>
-                        <td>${u}</td><td>${users[u].nickname||u}</td>
-                        <td>
-                            <button class="admin-btn chat-user-btn" data-username="${u}">聊天</button>
-                            <button class="admin-btn warning reset-pwd-btn" data-username="${u}">重置密码</button>
-                            <button class="admin-btn change-nick-btn" data-username="${u}">改昵称</button>
-                            <button class="admin-btn change-pwd-btn" data-username="${u}">改密码</button>
-                            <button class="admin-btn danger delete-user-btn" data-username="${u}">删除</button>
-                            <button class="admin-btn manage-friends-btn" data-username="${u}">好友管理</button>
-                        </td>
-                    </tr>`;
-                }
-                html += '</tbody></table>';
-                content.innerHTML = html;
-                document.getElementById('createUserBtn').onclick = async () => {
-                    const name = document.getElementById('newUsername').value.trim();
-                    const pwd = document.getElementById('newPassword').value;
-                    if (!name || !pwd) return alert('请输入用户名和密码');
-                    const u = await readGitHubFile('users.json') || {};
-                    if (u[name]) return alert('已存在');
-                    u[name] = { password: pwd, nickname: name };
-                    await writeGitHubFile('users.json', u, '管理员创建用户');
-                    alert('创建成功');
-                    renderAdminUsers();
-                };
-                document.querySelectorAll('.delete-user-btn').forEach(b => b.onclick = async () => {
-                    const uname = b.dataset.username;
-                    if (!confirm(`确定删除用户 ${uname} ？`)) return;
-                    const u = await readGitHubFile('users.json') || {};
-                    delete u[uname];
-                    await writeGitHubFile('users.json', u, `删除用户 ${uname}`);
-                    let fs = await readGitHubFile('friendships.json') || [];
-                    fs = fs.filter(f => f.user1 !== uname && f.user2 !== uname);
-                    await writeGitHubFile('friendships.json', fs, `清理好友关系`);
-                    let groups = await readGitHubFile('groups.json') || [];
-                    groups.forEach(g => g.members = g.members.filter(m => m !== uname));
-                    groups = groups.filter(g => g.members.length > 0);
-                    await writeGitHubFile('groups.json', groups, `清理群成员`);
-                    const msgs = await loadMessages();
-                    const toDel = new Set();
-                    msgs.forEach(m => { if (m.targetId?.startsWith('chat_') && m.targetId.includes(uname)) toDel
-                            .add(m.targetId); });
-                    for (const cid of toDel) await deleteMessagesByChatId(cid);
-                    alert('已删除');
-                    renderAdminUsers();
-                });
-                document.querySelectorAll('.reset-pwd-btn').forEach(b => b.onclick = async () => {
-                    const uname = b.dataset.username;
-                    const u = await readGitHubFile('users.json') || {};
-                    if (u[uname]) { u[uname].password = '123456';
-                        await writeGitHubFile('users.json', u, `重置密码 ${uname}`);
-                        alert('密码已重置为123456'); }
-                });
-                document.querySelectorAll('.change-pwd-btn').forEach(b => b.onclick = async () => {
-                    const uname = b.dataset.username;
-                    const newPwd = prompt('新密码');
-                    if (!newPwd) return;
-                    const u = await readGitHubFile('users.json') || {};
-                    if (u[uname]) { u[uname].password = newPwd;
-                        await writeGitHubFile('users.json', u, `修改密码 ${uname}`);
-                        alert('已修改'); }
-                });
-                document.querySelectorAll('.change-nick-btn').forEach(b => b.onclick = async () => {
-                    const uname = b.dataset.username;
-                    const nick = prompt('新昵称');
-                    if (!nick) return;
-                    const u = await readGitHubFile('users.json') || {};
-                    if (u[uname]) { u[uname].nickname = nick;
-                        await writeGitHubFile('users.json', u, `修改昵称 ${uname}`);
-                        alert('已修改');
-                        renderAdminUsers(); }
-                });
-                document.querySelectorAll('.chat-user-btn').forEach(b => b.onclick = () => startAdminChat(b.dataset
-                    .username));
-                document.querySelectorAll('.manage-friends-btn').forEach(b => b.onclick = () => showAdminFriendManager(
-                    b.dataset.username));
-            }
-
+    const content = document.getElementById('adminContent');
+    content.innerHTML = '<p>加载中...</p>';
+    const users = await readGitHubFile('users.json') || {};
+    const list = Object.keys(users).filter(u => u !== ADMIN_CREDENTIALS.username);
+    let html = `
+        <div class="admin-input-group">
+            <input id="newUsername" placeholder="新用户名"><input type="password" id="newPassword" placeholder="密码">
+            <button class="admin-btn" id="createUserBtn">创建用户</button>
+        </div>
+        <table class="admin-table"><thead><tr><th>用户名</th><th>昵称</th><th>操作</th></tr></thead><tbody>`;
+    for (const u of list) {
+        html += `<tr>
+            <td>${u}</td>
+            <td>${users[u].nickname||u}</td>
+            <td>
+                <button class="admin-btn chat-user-btn" data-username="${u}">聊天</button>
+                <button class="admin-btn info-user-btn" data-username="${u}" style="background:#3498db;">资料</button>
+                <button class="admin-btn warning reset-pwd-btn" data-username="${u}">重置密码</button>
+                <button class="admin-btn change-nick-btn" data-username="${u}">改昵称</button>
+                <button class="admin-btn change-pwd-btn" data-username="${u}">改密码</button>
+                <button class="admin-btn danger delete-user-btn" data-username="${u}">删除</button>
+                <button class="admin-btn manage-friends-btn" data-username="${u}">好友管理</button>
+            </td>
+        </tr>`;
+    }
+    html += '</tbody></table>';
+    content.innerHTML = html;
+    
+    // 创建用户按钮
+    document.getElementById('createUserBtn').onclick = async () => {
+        const name = document.getElementById('newUsername').value.trim();
+        const pwd = document.getElementById('newPassword').value;
+        if (!name || !pwd) return alert('请输入用户名和密码');
+        const u = await readGitHubFile('users.json') || {};
+        if (u[name]) return alert('已存在');
+        u[name] = { password: pwd, nickname: name };
+        await writeGitHubFile('users.json', u, '管理员创建用户');
+        alert('创建成功');
+        renderAdminUsers();
+    };
+    
+    // 删除用户按钮
+    document.querySelectorAll('.delete-user-btn').forEach(b => b.onclick = async () => {
+        const uname = b.dataset.username;
+        if (!confirm(`确定删除用户 ${uname} ？`)) return;
+        const u = await readGitHubFile('users.json') || {};
+        delete u[uname];
+        await writeGitHubFile('users.json', u, `删除用户 ${uname}`);
+        let fs = await readGitHubFile('friendships.json') || [];
+        fs = fs.filter(f => f.user1 !== uname && f.user2 !== uname);
+        await writeGitHubFile('friendships.json', fs, `清理好友关系`);
+        let groups = await readGitHubFile('groups.json') || [];
+        groups.forEach(g => g.members = g.members.filter(m => m !== uname));
+        groups = groups.filter(g => g.members.length > 0);
+        await writeGitHubFile('groups.json', groups, `清理群成员`);
+        const msgs = await loadMessages();
+        const toDel = new Set();
+        msgs.forEach(m => { if (m.targetId?.startsWith('chat_') && m.targetId.includes(uname)) toDel.add(m.targetId); });
+        for (const cid of toDel) await deleteMessagesByChatId(cid);
+        alert('已删除');
+        renderAdminUsers();
+    });
+    
+    // 重置密码按钮
+    document.querySelectorAll('.reset-pwd-btn').forEach(b => b.onclick = async () => {
+        const uname = b.dataset.username;
+        const u = await readGitHubFile('users.json') || {};
+        if (u[uname]) { u[uname].password = '123456';
+            await writeGitHubFile('users.json', u, `重置密码 ${uname}`);
+            alert('密码已重置为123456'); }
+    });
+    
+    // 修改密码按钮
+    document.querySelectorAll('.change-pwd-btn').forEach(b => b.onclick = async () => {
+        const uname = b.dataset.username;
+        const newPwd = prompt('新密码');
+        if (!newPwd) return;
+        const u = await readGitHubFile('users.json') || {};
+        if (u[uname]) { u[uname].password = newPwd;
+            await writeGitHubFile('users.json', u, `修改密码 ${uname}`);
+            alert('已修改'); }
+    });
+    
+    // 修改昵称按钮
+    document.querySelectorAll('.change-nick-btn').forEach(b => b.onclick = async () => {
+        const uname = b.dataset.username;
+        const nick = prompt('新昵称');
+        if (!nick) return;
+        const u = await readGitHubFile('users.json') || {};
+        if (u[uname]) { u[uname].nickname = nick;
+            await writeGitHubFile('users.json', u, `修改昵称 ${uname}`);
+            alert('已修改');
+            renderAdminUsers(); }
+    });
+    
+    // 聊天按钮
+    document.querySelectorAll('.chat-user-btn').forEach(b => b.onclick = () => startAdminChat(b.dataset.username));
+    
+    // ========== 新增：资料按钮（查看用户主页） ==========
+    document.querySelectorAll('.info-user-btn').forEach(btn => {
+        btn.onclick = () => {
+            const username = btn.dataset.username;
+            window.open(`personalpage.html?user=${encodeURIComponent(username)}`, '_blank');
+        };
+    });
+    
+    // 好友管理按钮
+    document.querySelectorAll('.manage-friends-btn').forEach(b => b.onclick = () => showAdminFriendManager(b.dataset.username));
+}
             async function startAdminChat(target) {
                 const chatId = `chat_admin_${target}`;
                 activeChat = { id: chatId, type: 'friend', name: target };
@@ -3571,11 +3591,18 @@ document.querySelectorAll('.chat-group-btn').forEach(b => {
             async function initAfterLogin() {
     document.getElementById('currentUserName').innerText = currentUser.nickname;
     document.getElementById('currentUserAvatar').innerText = currentUser.avatar;
+    
+    // ========== 新增：点击头像/用户名打开设置 ==========
+    document.getElementById('currentUserAvatar').style.cursor = 'pointer';
+    document.getElementById('currentUserName').style.cursor = 'pointer';
+    document.getElementById('currentUserAvatar').onclick = () => openSettings();
+    document.getElementById('currentUserName').onclick = () => openSettings();
+    // ================================================
+    
     loadUnread();
     loadLastSeen();
     loadLocalDeleted();
     
-    // 加载用户头像缓存
     await loadUserAvatarsCache();
     
     friendsData = await loadFriends();
@@ -3593,7 +3620,6 @@ document.querySelectorAll('.chat-group-btn').forEach(b => {
     const chatUser = urlParams.get('chat');
     const chatType = urlParams.get('type');
     if (chatUser && chatType === 'friend') {
-        // 查找好友并打开聊天
         const friend = friendsData.find(f => f.username === chatUser);
         if (friend) {
             setTimeout(() => {
@@ -3614,7 +3640,6 @@ document.querySelectorAll('.chat-group-btn').forEach(b => {
     if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(pollMessages, 2000);
 }
-
             async function handleSubmit() {
                 const username = document.getElementById('loginUsername').value.trim();
                 const password = document.getElementById('loginPassword').value;
