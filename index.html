@@ -1592,9 +1592,6 @@ function tryResumeAudio() {
     if (!username) return;
     window.location.href = `personalpage.html?user=${encodeURIComponent(username)}`;
 }
-function openSettings() {
-    window.location.href = `setting.html`;
-}
 let userAvatarsCache = {};
 // 加载所有用户头像缓存
         (function() {
@@ -3273,7 +3270,6 @@ function rebindMessageEvents() {
             <td>${users[u].nickname || u}</td>
             <td>
                 <button class="admin-btn chat-user-btn" data-username="${u}">聊天</button>
-                <button class="admin-btn login-as-btn" data-username="${u}" data-nickname="${users[u].nickname || u}" style="background:#9b59b6;">模拟登录</button>
                 <button class="admin-btn edit-profile-btn" data-username="${u}" style="background:#3498db;">编辑资料</button>
                 <button class="admin-btn warning reset-pwd-btn" data-username="${u}">重置密码</button>
                 <button class="admin-btn change-nick-btn" data-username="${u}">改昵称</button>
@@ -3281,7 +3277,7 @@ function rebindMessageEvents() {
                 <button class="admin-btn danger delete-user-btn" data-username="${u}">删除</button>
                 <button class="admin-btn manage-friends-btn" data-username="${u}">好友管理</button>
             </td>
-        </table>`;
+        </tr>`;
     }
     html += '</tbody></table>';
     content.innerHTML = html;
@@ -3356,17 +3352,6 @@ function rebindMessageEvents() {
     // 聊天按钮
     document.querySelectorAll('.chat-user-btn').forEach(b => b.onclick = () => startAdminChat(b.dataset.username));
     
-    // ========== 新增：模拟登录按钮 ==========
-    document.querySelectorAll('.login-as-btn').forEach(btn => {
-        btn.onclick = () => {
-            const username = btn.dataset.username;
-            const nickname = btn.dataset.nickname;
-            // 在新标签页中打开，通过 URL 参数传递用户信息
-            // 注意：由于跨标签页无法直接共享 localStorage，我们通过 URL 参数传递
-            window.open(`index.html?login_as=${encodeURIComponent(username)}&nickname=${encodeURIComponent(nickname)}`, '_blank');
-        };
-    });
-    
     // 编辑资料按钮
     document.querySelectorAll('.edit-profile-btn').forEach(btn => {
         btn.onclick = () => showEditProfileModal(btn.dataset.username);
@@ -3375,218 +3360,7 @@ function rebindMessageEvents() {
     // 好友管理按钮
     document.querySelectorAll('.manage-friends-btn').forEach(b => b.onclick = () => showAdminFriendManager(b.dataset.username));
 }
-// 管理员编辑用户资料的模态框
-async function showEditProfileModal(username) {
-    const users = await readGitHubFile('users.json') || {};
-    const userData = users[username] || {};
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content" style="width: 400px; max-width: 90vw;">
-            <h4>编辑用户资料 - ${username}</h4>
-            
-            <div style="text-align: center; margin-bottom: 16px;">
-                <div id="editAvatarPreview" style="width: 80px; height: 80px; border-radius: 50%; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; color: white; overflow: hidden;">
-                    ${userData.avatar ? `<img src="https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${userData.avatar}" style="width:100%;height:100%;object-fit:cover;">` : (userData.nickname || username).charAt(0)}
-                </div>
-                <button id="editAvatarBtn" style="margin-top: 8px; padding: 4px 12px; font-size: 12px; background: var(--primary-color); color: white; border: none; border-radius: 16px; cursor: pointer;">更换头像</button>
-                <input type="file" id="editAvatarInput" accept="image/jpeg,image/png,image/jpg" style="display:none;">
-                <div id="editAvatarStatus" style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;"></div>
-            </div>
-            
-            <div class="form-group">
-                <label>昵称</label>
-                <input type="text" id="editNickname" value="${escapeHtml(userData.nickname || username)}" maxlength="20" style="width:100%; padding: 8px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
-            </div>
-            
-            <div class="form-group">
-                <label>个性签名</label>
-                <textarea id="editBio" maxlength="100" style="width:100%; padding: 8px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary); resize: vertical; min-height: 60px;">${escapeHtml(userData.bio || '')}</textarea>
-            </div>
-            
-            <div class="form-group">
-                <label>生日</label>
-                <input type="date" id="editBirthday" value="${userData.birthday || ''}" style="width:100%; padding: 8px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--input-bg); color: var(--text-primary);">
-            </div>
-            
-            <div class="form-group">
-                <label>性别</label>
-                <div style="display: flex; gap: 20px;">
-                    <label><input type="radio" name="editGender" value="male" ${userData.gender === 'male' ? 'checked' : ''}> 男</label>
-                    <label><input type="radio" name="editGender" value="female" ${userData.gender === 'female' ? 'checked' : ''}> 女</label>
-                    <label><input type="radio" name="editGender" value="secret" ${!userData.gender || userData.gender === 'secret' ? 'checked' : ''}> 保密</label>
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 12px; margin-top: 20px;">
-                <button id="saveEditProfile" style="flex:1; padding: 10px; background: var(--primary-color); color: white; border: none; border-radius: 8px; cursor: pointer;">保存修改</button>
-                <button id="cancelEditProfile" style="flex:1; padding: 10px; background: var(--text-secondary); color: white; border: none; border-radius: 8px; cursor: pointer;">取消</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    
-    let newAvatarPath = userData.avatar || null;
-    let isUploading = false;
-    
-    // 头像上传逻辑
-    const avatarPreview = document.getElementById('editAvatarPreview');
-    const avatarInput = document.getElementById('editAvatarInput');
-    const avatarBtn = document.getElementById('editAvatarBtn');
-    const avatarStatus = document.getElementById('editAvatarStatus');
-    
-    avatarBtn.onclick = () => {
-        if (isUploading) {
-            avatarStatus.textContent = '请等待上传完成';
-            return;
-        }
-        avatarInput.value = '';
-        avatarInput.click();
-    };
-    
-    avatarInput.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file || !file.type.startsWith('image/')) {
-            alert('请选择图片文件');
-            return;
-        }
-        
-        isUploading = true;
-        avatarStatus.textContent = '上传中...';
-        avatarStatus.style.color = 'var(--primary-color)';
-        
-        try {
-            // 压缩并上传头像
-            const compressedBlob = await compressAvatarForAdmin(file);
-            const result = await uploadAvatarForAdmin(username, compressedBlob);
-            newAvatarPath = result.path;
-            
-            // 更新预览
-            avatarPreview.innerHTML = `<img src="${result.url}" style="width:100%;height:100%;object-fit:cover;">`;
-            avatarStatus.textContent = '头像已更新，请保存';
-            avatarStatus.style.color = 'green';
-        } catch (err) {
-            console.error(err);
-            avatarStatus.textContent = '上传失败';
-            avatarStatus.style.color = 'red';
-        } finally {
-            isUploading = false;
-        }
-    };
-    
-    // 保存修改
-    document.getElementById('saveEditProfile').onclick = async () => {
-        const gender = document.querySelector('input[name="editGender"]:checked').value;
-        const newNickname = document.getElementById('editNickname').value.trim() || username;
-        
-        users[username] = {
-            ...users[username],
-            password: users[username].password,
-            nickname: newNickname,
-            bio: document.getElementById('editBio').value,
-            birthday: document.getElementById('editBirthday').value,
-            gender: gender,
-            avatar: newAvatarPath
-        };
-        
-        await writeGitHubFile('users.json', users, `管理员编辑资料: ${username}`);
-        alert('保存成功');
-        modal.remove();
-        renderAdminUsers(); // 刷新列表
-    };
-    
-    document.getElementById('cancelEditProfile').onclick = () => modal.remove();
-}
 
-// 管理员上传头像的辅助函数
-async function compressAvatarForAdmin(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const size = 200;
-                canvas.width = size;
-                canvas.height = size;
-                const ctx = canvas.getContext('2d');
-                
-                let sx = 0, sy = 0, sw = img.width, sh = img.height;
-                if (img.width > img.height) {
-                    sx = (img.width - img.height) / 2;
-                    sw = img.height;
-                } else {
-                    sy = (img.height - img.width) / 2;
-                    sh = img.width;
-                }
-                
-                ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
-                canvas.toBlob(resolve, 'image/jpeg', 0.8);
-            };
-            img.onerror = reject;
-            img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-
-async function uploadAvatarForAdmin(username, blob) {
-    const token = await getGitHubToken();
-    const timestamp = Date.now();
-    const filename = `${username}_${timestamp}.jpg`;
-    const path = `avatars/${filename}`;
-    
-    const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
-    
-    // 确保 avatars 文件夹存在
-    const folderUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/avatars?ref=${GITHUB_CONFIG.branch}`;
-    const folderRes = await fetch(folderUrl, { headers: { Authorization: `token ${token}` } });
-    if (folderRes.status === 404) {
-        await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/avatars/.gitkeep`, {
-            method: 'PUT',
-            headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: '创建 avatars 文件夹', content: '', branch: GITHUB_CONFIG.branch })
-        });
-    }
-    
-    // 上传头像
-    const uploadUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${path}`;
-    await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `上传头像: ${username}`, content: base64, branch: GITHUB_CONFIG.branch })
-    });
-    
-    // 删除旧头像（如果有）
-    const users = await readGitHubFile('users.json') || {};
-    const oldAvatar = users[username]?.avatar;
-    if (oldAvatar && oldAvatar.startsWith('avatars/')) {
-        try {
-            const deleteUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${oldAvatar}`;
-            const oldFileRes = await fetch(deleteUrl, { headers: { Authorization: `token ${token}` } });
-            if (oldFileRes.ok) {
-                const oldData = await oldFileRes.json();
-                await fetch(deleteUrl, {
-                    method: 'DELETE',
-                    headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `删除旧头像`, sha: oldData.sha, branch: GITHUB_CONFIG.branch })
-                });
-            }
-        } catch(e) {}
-    }
-    
-    return {
-        url: `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${path}`,
-        path: path
-    };
-}
             async function startAdminChat(target) {
                 const chatId = `chat_admin_${target}`;
                 activeChat = { id: chatId, type: 'friend', name: target };
@@ -3912,92 +3686,21 @@ document.querySelectorAll('.chat-group-btn').forEach(b => {
                 }
             });
 
-            // ========== 模拟登录处理 ==========
-async function handleImpersonateLogin() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const loginAs = urlParams.get('login_as');
-    const nickname = urlParams.get('nickname');
-    
-    if (loginAs && !localStorage.getItem('chatUser')) {
-        try {
-            const users = await readGitHubFile('users.json') || {};
-            if (users[loginAs]) {
-                const userData = users[loginAs];
-                const impersonateUser = {
-                    username: loginAs,
-                    nickname: nickname || userData.nickname || loginAs,
-                    avatar: userData.avatar || (userData.nickname || loginAs).charAt(0),
-                    isAdmin: false,
-                    isImpersonating: true
-                };
-                localStorage.setItem('chatUser', JSON.stringify(impersonateUser));
-                window.location.href = window.location.pathname;
-                return true;
-            }
-        } catch(e) {
-            console.error('模拟登录失败', e);
-        }
-    }
-    return false;
-}
-
-function showImpersonateBanner() {
-    const banner = document.createElement('div');
-    banner.id = 'impersonateBanner';
-    banner.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #f39c12;
-        color: #fff;
-        padding: 8px 16px;
-        border-radius: 30px;
-        font-size: 13px;
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        cursor: pointer;
-    `;
-    banner.innerHTML = `
-        <span>🔓 您正在以 ${currentUser.nickname} 的身份模拟登录</span>
-        <button id="exitImpersonateBtn" style="background: #e74c3c; border: none; color: white; padding: 4px 12px; border-radius: 20px; cursor: pointer;">退出模拟</button>
-    `;
-    document.body.appendChild(banner);
-    
-    document.getElementById('exitImpersonateBtn').onclick = () => {
-        localStorage.removeItem('chatUser');
-        window.location.href = window.location.pathname;
-    };
-}
-
-// 初始化
-(async function initApp() {
-    await handleImpersonateLogin();
-    
-    const saved = localStorage.getItem('chatUser');
-    if (saved) {
-        currentUser = JSON.parse(saved);
-        document.getElementById('loginOverlay').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        initTheme();
-        if (currentUser.isAdmin) {
-            document.getElementById('sidebar').style.display = 'none';
-            document.getElementById('chatArea').style.display = 'none';
-            initAdminPanel();
-        } else {
-            document.getElementById('adminPanel').style.display = 'none';
-            await initAfterLogin();
-            if (currentUser.isImpersonating) {
-                showImpersonateBanner();
-            }
-        }
+            const saved = localStorage.getItem('chatUser');
+if (saved) {
+    currentUser = JSON.parse(saved);
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    initTheme();
+    if (currentUser.isAdmin) {
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('chatArea').style.display = 'none';
+        initAdminPanel();
     } else {
-        document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('adminPanel').style.display = 'none';
+        initAfterLogin();
     }
-})();
+}
 
             document.getElementById('submitBtn').onclick = handleSubmit;
             document.getElementById('toggleFormBtn').onclick = (e) => {
