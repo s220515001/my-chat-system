@@ -22,12 +22,10 @@
             display: flex;
             height: 100vh;
             width: 100%;
-            /* 移除 max-width 让界面完全撑满 */
             background: #f0f2f5;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
 
-        /* 其他样式保持不变 */
         .sidebar {
             width: 280px;
             background: #2c3e50;
@@ -244,6 +242,7 @@
             display: flex;
             flex-direction: column;
             background: #f8f9fa;
+            position: relative;
         }
 
         .chat-header {
@@ -361,12 +360,100 @@
             color: #7f8c8d;
         }
 
+        /* 图片消息气泡样式 */
+        .message-bubble.image-bubble {
+            padding: 8px;
+            overflow: hidden;
+        }
+
+        .msg-image {
+            display: block;
+            max-width: 100%;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .msg-image:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        }
+
+        .msg-image-placeholder {
+            display: block;
+            padding: 30px 20px;
+            text-align: center;
+            font-size: 40px;
+            color: #999;
+            background: #f0f0f0;
+            border-radius: 12px;
+            min-width: 120px;
+        }
+
+        /* 全屏图片预览 */
+        .image-preview-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .image-preview-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            font-size: 28px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 3001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            line-height: 1;
+        }
+
+        .image-preview-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .image-preview-img {
+            max-width: 90vw;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 输入区域 */
         .input-area {
             background: white;
             border-top: 1px solid #e9ecef;
             padding: 16px 24px;
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
         }
 
@@ -386,6 +473,39 @@
             box-shadow: 0 0 0 2px rgba(26, 188, 156, 0.2);
         }
 
+        .image-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid #dee2e6;
+            background: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            color: #6c757d;
+        }
+
+        .image-btn:hover {
+            background: #e9ecef;
+            border-color: #1abc9c;
+            color: #1abc9c;
+            transform: scale(1.05);
+        }
+
+        .image-btn:active {
+            transform: scale(0.95);
+            background: #dee2e6;
+        }
+
+        .image-btn svg {
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+        }
+
         .send-btn {
             background: #1abc9c;
             border: none;
@@ -396,11 +516,16 @@
             cursor: pointer;
             transition: 0.2s;
             font-size: 14px;
+            flex-shrink: 0;
         }
 
         .send-btn:hover {
             background: #16a085;
             transform: scale(0.98);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
         }
 
         .empty-chat {
@@ -635,6 +760,7 @@
             font-size: 14px;
         }
 
+        /* 滚动条样式 */
         .lists-scroll::-webkit-scrollbar,
         .messages-container::-webkit-scrollbar,
         .admin-content::-webkit-scrollbar {
@@ -653,6 +779,19 @@
         .messages-container::-webkit-scrollbar-track,
         .admin-content::-webkit-scrollbar-track {
             background: #e9ecef;
+        }
+
+        .messages-container::-webkit-scrollbar-thumb,
+        .admin-content::-webkit-scrollbar-thumb {
+            background: #adb5bd;
+            border-radius: 5px;
+        }
+
+        /* 拖拽悬停提示 */
+        .messages-container.drag-over {
+            outline: 3px dashed #1abc9c;
+            outline-offset: -3px;
+            background-color: rgba(26, 188, 156, 0.05);
         }
 
         @media (max-width: 640px) {
@@ -682,6 +821,36 @@
             .admin-tab {
                 padding: 10px 12px;
                 font-size: 13px;
+            }
+            .input-area {
+                padding: 12px 14px;
+                gap: 8px;
+            }
+            .input-area input {
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+            .image-btn {
+                width: 48px;
+                height: 48px;
+            }
+            .image-btn svg {
+                width: 22px;
+                height: 22px;
+            }
+            .send-btn {
+                padding: 10px 18px;
+                font-size: 13px;
+            }
+            .message-bubble {
+                max-width: 85%;
+            }
+            .image-preview-close {
+                top: 12px;
+                right: 12px;
+                width: 40px;
+                height: 40px;
+                font-size: 24px;
             }
         }
     </style>
@@ -727,8 +896,15 @@
                 </div>
             </div>
             <div class="input-area">
+                <button class="image-btn" id="imageBtn" title="发送图片">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                </button>
                 <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off">
                 <button class="send-btn" id="sendBtn">发送</button>
+                <input type="file" id="imageFileInput" accept="image/*" capture="environment" style="display:none;">
             </div>
         </div>
 
@@ -777,6 +953,7 @@
             let unreadCounts = {};
             let lastSeenTimestamps = {};
             let audioCtx = null;
+            let imageEventsBound = false;
 
             function tryResumeAudio() {
                 if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
@@ -874,7 +1051,7 @@
                         method: 'PATCH',
                         headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
                         body: JSON.stringify({ files: { 'messages.json': { content: JSON.stringify(messages, null,
-                                2), sha: fileSha } } })
+                                    2), sha: fileSha } } })
                     });
                     return updRes.ok;
                 } catch (e) { return false; }
@@ -1015,8 +1192,8 @@
             async function createGroup(name) {
                 if (!name) { alert('请输入名称'); return false; }
                 const groups = await readGitHubFile('groups.json') || [];
-                groups.push({ id: Date.now().toString(), groupName: name, members: [currentUser.username], owner: currentUser
-                        .username });
+                groups.push({ id: Date.now().toString(), groupName: name, members: [currentUser.username],
+                    owner: currentUser.username });
                 await writeGitHubFile('groups.json', groups, `创建群聊: ${name}`);
                 return true;
             }
@@ -1031,16 +1208,87 @@
                 return true;
             }
 
+            // ========== 图片压缩 ==========
+            function compressImage(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.onload = function() {
+                            let width = img.width;
+                            let height = img.height;
+                            const maxDim = 1200;
+                            // 等比缩放原图
+                            if (width > maxDim || height > maxDim) {
+                                if (width > height) {
+                                    height = Math.round(height * maxDim / width);
+                                    width = maxDim;
+                                } else {
+                                    width = Math.round(width * maxDim / height);
+                                    height = maxDim;
+                                }
+                            }
+                            // 原图 Canvas
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            const fullBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                            // 缩略图（最大300px宽）
+                            let thumbWidth = width;
+                            let thumbHeight = height;
+                            const maxThumb = 300;
+                            if (thumbWidth > maxThumb) {
+                                thumbHeight = Math.round(thumbHeight * maxThumb / thumbWidth);
+                                thumbWidth = maxThumb;
+                            }
+                            const thumbCanvas = document.createElement('canvas');
+                            thumbCanvas.width = thumbWidth;
+                            thumbCanvas.height = thumbHeight;
+                            const thumbCtx = thumbCanvas.getContext('2d');
+                            thumbCtx.drawImage(img, 0, 0, thumbWidth, thumbHeight);
+                            const thumbBase64 = thumbCanvas.toDataURL('image/jpeg', 0.5);
+
+                            // 检查原图大小（Base64 长度 * 0.75 ≈ 字节数，除以1024得KB）
+                            const estimatedKB = (fullBase64.length * 0.75) / 1024;
+                            if (estimatedKB > 500) {
+                                reject(new Error('图片过大，请重新选择（压缩后超过500KB）'));
+                                return;
+                            }
+
+                            resolve({
+                                content: fullBase64,
+                                thumbnail: thumbBase64,
+                                width: width,
+                                height: height
+                            });
+                        };
+                        img.onerror = function() {
+                            reject(new Error('图片加载失败'));
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = function() {
+                        reject(new Error('文件读取失败'));
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
             // ========== 消息发送 ==========
-            async function sendMessageToChat(chatId, chatType, content) {
+            async function sendMessageToChat(chatId, chatType, content, type = 'text', extra = {}) {
                 const msg = {
                     id: Date.now(),
                     from: currentUser.username,
                     fromNickname: currentUser.nickname,
                     targetId: chatId,
                     targetType: chatType,
+                    type,
                     content,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    ...extra
                 };
                 const ok = await addMessage(msg);
                 if (ok && activeChat.id === chatId) {
@@ -1048,6 +1296,63 @@
                     renderMessages(msgs);
                 }
                 return ok;
+            }
+
+            async function handleImageSend(file) {
+                if (!activeChat.id) {
+                    alert('请先选择聊天对象');
+                    return;
+                }
+                try {
+                    const imageData = await compressImage(file);
+                    const ok = await sendMessageToChat(
+                        activeChat.id,
+                        activeChat.type,
+                        imageData.content,
+                        'image', {
+                            thumbnail: imageData.thumbnail,
+                            width: imageData.width,
+                            height: imageData.height
+                        }
+                    );
+                    if (!ok) alert('发送失败，请重试');
+                } catch (err) {
+                    alert(err.message || '图片处理失败');
+                }
+            }
+
+            // ========== 全屏图片预览 ==========
+            function showImagePreview(fullSrc) {
+                // 移除已有预览
+                const existing = document.querySelector('.image-preview-overlay');
+                if (existing) existing.remove();
+
+                const overlay = document.createElement('div');
+                overlay.className = 'image-preview-overlay';
+                overlay.innerHTML = `
+                    <button class="image-preview-close" title="关闭">✕</button>
+                    <img src="${fullSrc}" class="image-preview-img" alt="预览图片" loading="eager">
+                `;
+                const closePreview = () => overlay.remove();
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay || e.target.classList.contains('image-preview-close')) {
+                        closePreview();
+                    }
+                });
+                // ESC 键关闭
+                const escHandler = (e) => {
+                    if (e.key === 'Escape') { closePreview();
+                        document.removeEventListener('keydown', escHandler); }
+                };
+                document.addEventListener('keydown', escHandler);
+                overlay._escHandler = escHandler;
+                // 移除时清理
+                const origRemove = overlay.remove.bind(overlay);
+                overlay.remove = function() {
+                    document.removeEventListener('keydown', overlay._escHandler);
+                    origRemove();
+                };
+                document.body.appendChild(overlay);
             }
 
             // ========== UI 渲染 ==========
@@ -1138,11 +1443,33 @@
                             'chat_admin_'))) {
                         bubbleClass = ' admin-msg';
                         senderLabel =
-                            `<div class="admin-sender-label" style="font-size:11px;margin-bottom:4px;">管理员</div>`;
+                            '<div class="admin-sender-label" style="font-size:11px;margin-bottom:4px;">管理员</div>';
                     } else if (activeChat.type === 'group' && !isOwn) {
                         senderLabel =
-                            `<div style="font-size:11px;color:#7f8c8d;margin-bottom:4px;">${m.fromNickname}</div>`;
+                            `<div style="font-size:11px;color:#7f8c8d;margin-bottom:4px;">${escapeHtml(m.fromNickname || m.from)}</div>`;
                     }
+                    // 判断是否为图片消息
+                    if (m.type === 'image') {
+                        const thumbSrc = m.thumbnail || m.content;
+                        const fullSrc = m.content;
+                        const imgHtml = `
+                            <img src="${thumbSrc}" 
+                                 class="msg-image" 
+                                 data-full="${fullSrc}"
+                                 alt="图片"
+                                 loading="lazy"
+                                 onclick="event.stopPropagation();window._showImagePreview && window._showImagePreview(this.dataset.full);"
+                                 onerror="this.outerHTML='<span class=\\'msg-image-placeholder\\'>🖼️</span>'">
+                        `;
+                        return `<div class="message-row ${isOwn ? 'own' : ''}">
+                            <div class="message-bubble image-bubble${bubbleClass}">
+                                ${senderLabel}
+                                ${imgHtml}
+                                <div class="message-time">${time}</div>
+                            </div>
+                        </div>`;
+                    }
+                    // 文字消息
                     return `<div class="message-row ${isOwn ? 'own' : ''}">
                         <div class="message-bubble${bubbleClass}">
                             ${senderLabel}
@@ -1155,6 +1482,7 @@
             }
 
             function escapeHtml(s) {
+                if (!s || typeof s !== 'string') return '';
                 return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
             }
 
@@ -1176,7 +1504,7 @@
                 renderMessages(msgs);
                 renderFriendsList(friendsData);
                 renderGroupsList(groupsData);
-                bindSendEvents(); // 确保发送事件绑定
+                bindSendEvents();
             }
 
             function bindSendEvents() {
@@ -1193,6 +1521,92 @@
                 const ok = await sendMessageToChat(activeChat.id, activeChat.type, content);
                 if (ok) input.value = '';
                 else alert('发送失败');
+            }
+
+            // ========== 图片事件绑定 ==========
+            function bindImageEvents() {
+                if (imageEventsBound) return;
+                imageEventsBound = true;
+
+                // 将 showImagePreview 暴露到全局，供内联 onclick 使用
+                window._showImagePreview = showImagePreview;
+
+                // 相机按钮点击
+                const imageBtn = document.getElementById('imageBtn');
+                const imageFileInput = document.getElementById('imageFileInput');
+                if (imageBtn && imageFileInput) {
+                    imageBtn.addEventListener('click', () => {
+                        if (!activeChat.id) {
+                            alert('请先选择聊天对象');
+                            return;
+                        }
+                        imageFileInput.value = '';
+                        imageFileInput.click();
+                    });
+                    imageFileInput.addEventListener('change', () => {
+                        const file = imageFileInput.files[0];
+                        if (file) {
+                            handleImageSend(file);
+                            imageFileInput.value = '';
+                        }
+                    });
+                }
+
+                // Ctrl+V 粘贴图片
+                document.addEventListener('paste', async (e) => {
+                    if (!activeChat.id) return;
+                    const items = e.clipboardData?.items;
+                    if (!items) return;
+                    for (const item of items) {
+                        if (item.type.startsWith('image/')) {
+                            e.preventDefault();
+                            const file = item.getAsFile();
+                            if (file) {
+                                await handleImageSend(file);
+                            }
+                            return;
+                        }
+                    }
+                });
+
+                // 拖拽图片到聊天区域
+                const messagesContainer = document.getElementById('messagesContainer');
+                const chatArea = document.getElementById('chatArea');
+
+                function setupDragDrop(el) {
+                    if (!el) return;
+                    el.addEventListener('dragover', (e) => {
+                        if (!activeChat.id) return;
+                        const hasImage = Array.from(e.dataTransfer.types).some(t => t ===
+                            'Files' || t === 'file');
+                        if (hasImage) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.dataTransfer.dropEffect = 'copy';
+                            messagesContainer.classList.add('drag-over');
+                        }
+                    });
+                    el.addEventListener('dragleave', (e) => {
+                        if (e.target === el || e.target === messagesContainer) {
+                            messagesContainer.classList.remove('drag-over');
+                        }
+                    });
+                    el.addEventListener('drop', async (e) => {
+                        messagesContainer.classList.remove('drag-over');
+                        if (!activeChat.id) return;
+                        const files = e.dataTransfer?.files;
+                        if (files && files.length > 0) {
+                            const file = files[0];
+                            if (file.type.startsWith('image/')) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                await handleImageSend(file);
+                            }
+                        }
+                    });
+                }
+                setupDragDrop(messagesContainer);
+                setupDragDrop(chatArea);
             }
 
             // 弹窗
@@ -1325,6 +1739,8 @@
                     });
                 });
                 renderAdminUsers();
+                // 确保图片事件绑定
+                bindImageEvents();
             }
 
             async function renderAdminUsers() {
@@ -1435,7 +1851,8 @@
                 unreadCounts[chatId] = 0;
                 saveUnread();
                 renderMessages(msgs);
-                bindSendEvents(); // 关键：绑定发送事件
+                bindSendEvents();
+                bindImageEvents();
             }
 
             document.getElementById('backToAdminBtn').addEventListener('click', async () => {
@@ -1619,6 +2036,7 @@
                 renderFriendsList(friendsData);
                 renderGroupsList(groupsData);
                 bindSendEvents();
+                bindImageEvents();
                 document.getElementById('addFriendBtn').onclick = showAddFriendModal;
                 document.getElementById('createGroupBtn').onclick = showCreateGroupModal;
                 document.getElementById('logoutBtn').onclick = logout;
