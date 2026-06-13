@@ -1782,25 +1782,31 @@
 
             // ========== 好友/群聊加载 ==========
             async function loadFriends() {
-                try {
-                    const fs = await readGitHubFile('friendships.json') || [];
-                    const myFriends = [];
-                    for (const f of fs) {
-                        let friend = null;
-                        if (f.user1 === currentUser.username) friend = f.user2;
-                        else if (f.user2 === currentUser.username) friend = f.user1;
-                        if (friend && friend !== ADMIN_CREDENTIALS.username) myFriends.push(friend);
-                    }
-                    const users = await readGitHubFile('users.json') || {};
-                    return myFriends.map(f => ({
-                        id: getPrivateChatId(currentUser.username, f),
-                        username: f,
-                        nickname: users[f]?.nickname || f,
-                        avatar: (users[f]?.nickname || f).charAt(0),
-                        type: 'friend'
-                    }));
-                } catch (e) { return []; }
-            }
+    try {
+        const fs = await readGitHubFile('friendships.json') || [];
+        const myFriends = [];
+        for (const f of fs) {
+            let friend = null;
+            if (f.user1 === currentUser.username) friend = f.user2;
+            else if (f.user2 === currentUser.username) friend = f.user1;
+            if (friend && friend !== ADMIN_CREDENTIALS.username) myFriends.push(friend);
+        }
+        const users = await readGitHubFile('users.json') || {};
+        return myFriends.map(f => {
+            const userData = users[f] || {};
+            return {
+                id: getPrivateChatId(currentUser.username, f),
+                username: f,
+                nickname: userData.nickname || f,
+                avatar: userData.avatar || null,  // 头像路径
+                type: 'friend'
+            };
+        });
+    } catch (e) { 
+        console.error('加载好友失败', e);
+        return []; 
+    }
+}
 
             async function addFriend(friendUsername) {
                 if (friendUsername === currentUser.username || friendUsername === ADMIN_CREDENTIALS.username) {
@@ -1822,25 +1828,28 @@
             }
 
             async function loadGroups() {
-                try {
-                    const groups = await readGitHubFile('groups.json') || [];
-                    const my = [];
-                    for (const g of groups) {
-                        if (g.members && g.members.includes(currentUser.username)) {
-                            my.push({
-                                id: `group_${g.id}`,
-                                groupId: g.id,
-                                groupName: g.groupName,
-                                avatar: g.groupName.charAt(0),
-                                type: 'group',
-                                members: g.members,
-                                owner: g.owner || g.members[0]
-                            });
-                        }
-                    }
-                    return my;
-                } catch (e) { return []; }
+    try {
+        const groups = await readGitHubFile('groups.json') || [];
+        const my = [];
+        for (const g of groups) {
+            if (g.members && g.members.includes(currentUser.username)) {
+                my.push({
+                    id: `group_${g.id}`,
+                    groupId: g.id,
+                    groupName: g.groupName,
+                    avatar: g.avatar || null,  // 群头像路径（可选）
+                    type: 'group',
+                    members: g.members,
+                    owner: g.owner || g.members[0]
+                });
             }
+        }
+        return my;
+    } catch (e) { 
+        console.error('加载群聊失败', e);
+        return []; 
+    }
+}
 
             async function createGroup(name) {
                 if (!name) { alert('请输入名称');
@@ -2484,47 +2493,71 @@
             }
 
             function renderFriendsList(friends) {
-                const container = document.getElementById('friendsList');
-                if (!friends.length) {
-                    container.innerHTML =
-                        '<div style="padding:12px 20px;color:#95a5a6;font-size:13px;">暂无好友</div>';
-                    return;
-                }
-                container.innerHTML = friends.map(f => `
-                    <div class="contact-item ${activeChat.id === f.id ? 'active' : ''}" data-id="${f.id}" data-type="friend" data-name="${f.nickname}">
-                        <div class="contact-avatar">${f.avatar}</div>
-                        <div class="contact-info">
-                            <div class="contact-name">${f.nickname}</div>
-                            <div class="contact-meta">@${f.username}</div>
-                        </div>
-                    </div>`).join('');
-                container.querySelectorAll('.contact-item').forEach(el => {
-                    el.addEventListener('click', () => switchChat(el.dataset.id, 'friend', el.dataset.name));
-                });
-                updateUnreadBadges();
-            }
-
+    const container = document.getElementById('friendsList');
+    if (!friends.length) {
+        container.innerHTML = '<div style="padding:12px 20px;color:#95a5a6;font-size:13px;">暂无好友</div>';
+        return;
+    }
+    
+    container.innerHTML = friends.map(f => {
+        // 获取头像URL
+        const avatarUrl = f.avatar ? `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${f.avatar}` : null;
+        let avatarHtml = '';
+        
+        if (avatarUrl) {
+            avatarHtml = `<div class="contact-avatar" style="background: none; overflow: hidden;"><img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.parentElement.style.background='linear-gradient(135deg, #667eea 0%, #764ba2 100%)';this.parentElement.innerHTML='${f.nickname.charAt(0)}'"></div>`;
+        } else {
+            avatarHtml = `<div class="contact-avatar">${f.nickname.charAt(0)}</div>`;
+        }
+        
+        return `
+            <div class="contact-item ${activeChat.id === f.id ? 'active' : ''}" data-id="${f.id}" data-type="friend" data-name="${f.nickname}" data-username="${f.username}">
+                ${avatarHtml}
+                <div class="contact-info">
+                    <div class="contact-name">${escapeHtml(f.nickname)}</div>
+                    <div class="contact-meta">@${f.username}</div>
+                </div>
+            </div>`;
+    }).join('');
+    
+    container.querySelectorAll('.contact-item').forEach(el => {
+        el.addEventListener('click', () => switchChat(el.dataset.id, 'friend', el.dataset.name));
+    });
+    updateUnreadBadges();
+}
             function renderGroupsList(groups) {
-                const container = document.getElementById('groupsList');
-                if (!groups.length) {
-                    container.innerHTML =
-                        '<div style="padding:12px 20px;color:#95a5a6;font-size:13px;">暂无群聊</div>';
-                    return;
-                }
-                container.innerHTML = groups.map(g => `
-                    <div class="group-item ${activeChat.id === g.id ? 'active' : ''}" data-id="${g.id}" data-type="group" data-name="${g.groupName}">
-                        <div class="group-avatar">${g.avatar}</div>
-                        <div class="group-info">
-                            <div class="group-name">${g.groupName}</div>
-                            <div class="group-meta">${g.members.length} 人 · 群聊</div>
-                        </div>
-                    </div>`).join('');
-                container.querySelectorAll('.group-item').forEach(el => {
-                    el.addEventListener('click', () => switchChat(el.dataset.id, 'group', el.dataset.name));
-                });
-                updateUnreadBadges();
-            }
-
+    const container = document.getElementById('groupsList');
+    if (!groups.length) {
+        container.innerHTML = '<div style="padding:12px 20px;color:#95a5a6;font-size:13px;">暂无群聊</div>';
+        return;
+    }
+    
+    container.innerHTML = groups.map(g => {
+        // 获取群头像URL（如果有）
+        const avatarUrl = g.avatar ? `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${g.avatar}` : null;
+        let avatarHtml = '';
+        
+        if (avatarUrl) {
+            avatarHtml = `<div class="group-avatar" style="background: none; overflow: hidden;"><img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.parentElement.style.background='linear-gradient(135deg, #667eea 0%, #764ba2 100%)';this.parentElement.innerHTML='${g.groupName.charAt(0)}'"></div>`;
+        } else {
+            avatarHtml = `<div class="group-avatar">${g.groupName.charAt(0)}</div>`;
+        }
+        
+        return `
+            <div class="group-item ${activeChat.id === g.id ? 'active' : ''}" data-id="${g.id}" data-type="group" data-name="${g.groupName}">
+                ${avatarHtml}
+                <div class="group-info">
+                    <div class="group-name">${escapeHtml(g.groupName)}</div>
+                    <div class="group-meta">${g.members.length} 人 · 群聊</div>
+                </div>
+            </div>`;
+    }).join('');
+    
+    container.querySelectorAll('.group-item').forEach(el => {
+        el.addEventListener('click', () => switchChat(el.dataset.id, 'group', el.dataset.name));
+    });
+    updateUnreadBadges();
+}
             function renderMessages(msgs) {
                 const container = document.getElementById('messagesContainer');
                 if (!activeChat.id) {
@@ -2796,28 +2829,81 @@ function rebindMessageEvents() {
             window._scrollToQuotedMessage = scrollToMessage;
 
             async function switchChat(chatId, type, name) {
-                hideContextMenu();
-                hideStatusTooltip();
-                clearQuote();
-                activeChat = { id: chatId, type, name };
-                document.getElementById('chatContactName').innerText = name;
-                document.getElementById('chatContactType').innerText = type === 'friend' ? '私密好友' : '群聊';
-                document.getElementById('addMemberBtn').style.display = type === 'group' ? 'block' : 'none';
-                if (type === 'group') {
-                    const g = groupsData.find(x => x.id === chatId);
-                    if (g) document.getElementById('addMemberBtn').onclick = () => showAddMemberModal(g.groupId);
-                }
-                unreadCounts[chatId] = 0;
-                saveUnread();
-                const msgs = await getMessagesForChatCached(chatId);
-                if (msgs.length) lastSeenTimestamps[chatId] = Math.max(...msgs.map(m => m.timestamp));
-                else lastSeenTimestamps[chatId] = Date.now();
-                saveLastSeen();
-                renderMessages(msgs);
-                renderFriendsList(friendsData);
-                renderGroupsList(groupsData);
-                bindSendEvents();
-            }
+    hideContextMenu();
+    hideStatusTooltip();
+    clearQuote();
+    activeChat = { id: chatId, type, name };
+    
+    // 获取头像URL并更新聊天头部
+    let avatarUrl = null;
+    let avatarHtml = '';
+    
+    if (type === 'friend') {
+        // 查找好友信息
+        const friend = friendsData.find(f => f.id === chatId);
+        if (friend && friend.avatar) {
+            avatarUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${friend.avatar}`;
+            avatarHtml = `<img src="${avatarUrl}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`;
+            avatarHtml += `<div style="width:40px;height:40px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:50%;display:none;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:white;flex-shrink:0;">${name.charAt(0)}</div>`;
+        } else {
+            avatarHtml = `<div style="width:40px;height:40px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:white;flex-shrink:0;">${name.charAt(0)}</div>`;
+        }
+    } else if (type === 'group') {
+        // 查找群聊信息
+        const group = groupsData.find(g => g.id === chatId);
+        if (group && group.avatar) {
+            avatarUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${group.avatar}`;
+            avatarHtml = `<img src="${avatarUrl}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`;
+            avatarHtml += `<div style="width:40px;height:40px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:50%;display:none;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:white;flex-shrink:0;">${name.charAt(0)}</div>`;
+        } else {
+            avatarHtml = `<div style="width:40px;height:40px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:white;flex-shrink:0;">${name.charAt(0)}</div>`;
+        }
+    }
+    
+    // 更新聊天头部HTML
+    const chatHeader = document.getElementById('chatHeader');
+    const headerContent = `
+        <div class="chat-contact-info">
+            <div style="display:flex;align-items:center;gap:12px;">
+                ${avatarHtml}
+                <div>
+                    <div class="chat-contact-name">${escapeHtml(name)}</div>
+                    <div class="chat-contact-type">${type === 'friend' ? '私密好友' : '群聊'}</div>
+                </div>
+            </div>
+        </div>
+        <button class="add-member-header-btn" id="addMemberBtn" style="display: ${type === 'group' ? 'block' : 'none'};">添加成员</button>
+        <button class="back-to-admin-btn" id="backToAdminBtn" style="display: none;">返回管理</button>
+    `;
+    chatHeader.innerHTML = headerContent;
+    
+    // 重新绑定按钮事件
+    if (type === 'group') {
+        const g = groupsData.find(x => x.id === chatId);
+        if (g) document.getElementById('addMemberBtn').onclick = () => showAddMemberModal(g.groupId);
+    }
+    
+    document.getElementById('backToAdminBtn').addEventListener('click', async () => {
+        document.getElementById('chatArea').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'flex';
+        document.getElementById('backToAdminBtn').style.display = 'none';
+        activeChat = { id: null, type: null, name: null };
+        hideContextMenu();
+        clearQuote();
+        renderAdminUsers();
+    });
+    
+    unreadCounts[chatId] = 0;
+    saveUnread();
+    const msgs = await getMessagesForChatCached(chatId);
+    if (msgs.length) lastSeenTimestamps[chatId] = Math.max(...msgs.map(m => m.timestamp));
+    else lastSeenTimestamps[chatId] = Date.now();
+    saveLastSeen();
+    renderMessages(msgs);
+    renderFriendsList(friendsData);
+    renderGroupsList(groupsData);
+    bindSendEvents();
+}
 
             function bindSendEvents() {
                 const sendBtn = document.getElementById('sendBtn');

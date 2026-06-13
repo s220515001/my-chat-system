@@ -16,6 +16,7 @@
             --bg-secondary: #ffffff;
             --text-primary: #2c3e50;
             --text-secondary: #6c757d;
+            --text-muted: #95a5a6;
             --border-color: #e9ecef;
             --primary-color: #1abc9c;
             --primary-hover: #16a085;
@@ -24,7 +25,6 @@
             --input-bg: #ffffff;
             --input-border: #dee2e6;
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         [data-theme="dark"] {
@@ -32,6 +32,7 @@
             --bg-secondary: #16213e;
             --text-primary: #e0e0e0;
             --text-secondary: #a0a0a0;
+            --text-muted: #6a7d8e;
             --border-color: #2a2a4a;
             --primary-color: #16a085;
             --primary-hover: #1abc9c;
@@ -103,6 +104,7 @@
 
         .theme-toggle:hover {
             border-color: var(--primary-color);
+            color: var(--primary-color);
         }
 
         /* 头像区域 */
@@ -162,15 +164,23 @@
             opacity: 1;
         }
 
+        .upload-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            min-height: 36px;
+        }
+
         .change-avatar-btn {
             background: transparent;
             border: 1px solid var(--border-color);
             border-radius: 20px;
-            padding: 6px 16px;
+            padding: 8px 20px;
             font-size: 13px;
             cursor: pointer;
             color: var(--text-primary);
             transition: all 0.2s;
+            margin-top: 8px;
         }
 
         .change-avatar-btn:hover {
@@ -222,6 +232,12 @@
             box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.1);
         }
 
+        .form-group input:disabled,
+        .form-group input[readonly] {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
         .form-group textarea {
             resize: vertical;
             min-height: 80px;
@@ -240,6 +256,7 @@
             display: flex;
             gap: 24px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .radio-option {
@@ -264,7 +281,7 @@
         .button-section {
             display: flex;
             gap: 12px;
-            margin-top: 20px;
+            margin-bottom: 20px;
         }
 
         .btn {
@@ -286,6 +303,10 @@
         .btn-primary:hover {
             background: var(--primary-hover);
             transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
         }
 
         .btn-secondary {
@@ -321,7 +342,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            padding: 14px 0;
             border-bottom: 1px solid var(--border-color);
         }
 
@@ -338,13 +359,32 @@
             color: var(--text-secondary);
         }
 
+        .other-item .action-link {
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .other-item .action-link:hover {
+            opacity: 0.8;
+        }
+
+        .other-item .danger-link {
+            color: var(--danger-color);
+            cursor: pointer;
+        }
+
+        .other-item .danger-link:hover {
+            text-decoration: underline;
+        }
+
         /* Toast 提示 */
         .toast {
             position: fixed;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: #333;
+            background: #333333;
             color: white;
             padding: 10px 20px;
             border-radius: 30px;
@@ -352,6 +392,11 @@
             z-index: 1000;
             animation: toastIn 0.3s ease;
             pointer-events: none;
+            white-space: nowrap;
+        }
+
+        [data-theme="dark"] .toast {
+            background: #555555;
         }
 
         @keyframes toastIn {
@@ -365,9 +410,68 @@
             }
         }
 
+        /* 模态框 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            padding: 24px;
+            border-radius: 16px;
+            width: 320px;
+            max-width: 90vw;
+            color: var(--text-primary);
+        }
+
+        .modal-content h4 {
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+
+        .modal-content button {
+            width: 100%;
+            padding: 10px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+
+        .modal-content .modal-close {
+            background: var(--text-secondary);
+        }
+
         /* 文件上传隐藏 */
         #avatarInput {
             display: none;
+        }
+
+        /* 加载状态 */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
         }
 
         /* 响应式 */
@@ -383,6 +487,16 @@
             
             .button-section {
                 flex-direction: column;
+            }
+
+            .radio-group {
+                gap: 16px;
+            }
+
+            .toast {
+                white-space: normal;
+                text-align: center;
+                max-width: 80vw;
             }
         }
     </style>
@@ -402,6 +516,7 @@
                 <span id="avatarText">我</span>
                 <div class="avatar-overlay">点击更换头像</div>
             </div>
+            <div class="upload-status" id="uploadStatus"></div>
             <button class="change-avatar-btn" id="changeAvatarBtn">更换头像</button>
             <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/jpg">
         </div>
@@ -410,17 +525,19 @@
         <div class="form-section">
             <div class="form-group">
                 <label>用户ID</label>
-                <input type="text" id="userId" readonly disabled style="background: var(--input-bg); opacity: 0.7;">
+                <input type="text" id="userId" readonly disabled>
             </div>
             
             <div class="form-group">
                 <label>昵称</label>
                 <input type="text" id="nickname" placeholder="请输入昵称" maxlength="20">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">最多20个字符</div>
             </div>
             
             <div class="form-group">
                 <label>个性签名</label>
                 <textarea id="bio" placeholder="这个人很懒，什么都没写..." maxlength="100"></textarea>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">最多100个字符</div>
             </div>
             
             <div class="form-row">
@@ -446,7 +563,7 @@
             
             <div class="form-group">
                 <label>注册时间</label>
-                <input type="text" id="registerTime" readonly disabled style="background: var(--input-bg); opacity: 0.7;">
+                <input type="text" id="registerTime" readonly disabled>
             </div>
         </div>
 
@@ -460,39 +577,62 @@
         <div class="other-section">
             <div class="other-item">
                 <span>账号安全</span>
-                <span id="changePasswordBtn" style="color: var(--primary-color); cursor: pointer;">修改密码 &gt;</span>
+                <span class="action-link" id="changePasswordBtn">修改密码 &gt;</span>
             </div>
             <div class="other-item">
                 <span>清除聊天记录</span>
-                <span id="clearHistoryBtn" style="color: var(--danger-color); cursor: pointer;">清除 &gt;</span>
+                <span class="danger-link" id="clearHistoryBtn">清除 &gt;</span>
             </div>
             <div class="other-item">
                 <span>关于 GitChat</span>
                 <span>版本 1.0.0</span>
             </div>
+            <div class="other-item">
+                <span>退出登录</span>
+                <span class="danger-link" id="logoutBtn">退出 &gt;</span>
+            </div>
         </div>
     </div>
 
     <script>
-        // 配置
+        // ========== GitHub 配置 ==========
         const GITHUB_CONFIG = {
             owner: "s220515001",
             repo: "my-chat-system",
             branch: "main"
         };
         
+        // ========== 全局变量 ==========
         let currentUser = null;
         let currentTheme = 'light';
-        let avatarBase64 = null;
-
+        let currentAvatarPath = null;      // 存储头像路径（如 avatars/xxx.jpg）
+        let isUploading = false;
+        
+        // ========== 辅助函数 ==========
+        function showToast(message) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+        
         // 获取 GitHub Token
         async function getGitHubToken() {
             const TOKEN_BIN_ID = "6a296f88da38895dfea6e9b3";
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${TOKEN_BIN_ID}/latest`);
-            const data = await res.json();
-            return data.record.github_token;
+            try {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${TOKEN_BIN_ID}/latest`);
+                const data = await res.json();
+                return data.record.github_token;
+            } catch (e) {
+                console.error('获取Token失败', e);
+                throw new Error('无法获取GitHub Token');
+            }
         }
-
+        
+        // Base64 解码
         function decodeBase64(str) {
             try {
                 return decodeURIComponent(escape(atob(str)));
@@ -500,7 +640,8 @@
                 return atob(str);
             }
         }
-
+        
+        // 读取 GitHub 文件
         async function readGitHubFile(filename) {
             const token = await getGitHubToken();
             const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
@@ -510,7 +651,8 @@
             const data = await res.json();
             return JSON.parse(decodeBase64(data.content));
         }
-
+        
+        // 写入 GitHub 文件
         async function writeGitHubFile(filename, content, msg) {
             const token = await getGitHubToken();
             const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
@@ -535,20 +677,28 @@
             if (!wr.ok) throw new Error(`写入失败: ${wr.status}`);
             return await wr.json();
         }
-
-        // 压缩图片
-        function compressAvatar(file) {
+        
+        // 获取头像完整 URL
+        function getAvatarUrl(avatarPath) {
+            if (!avatarPath) return null;
+            if (avatarPath.startsWith('http')) return avatarPath;
+            return `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${avatarPath}`;
+        }
+        
+        // ========== 图片处理 ==========
+        // 压缩图片为正方形
+        function compressAvatar(file, maxSize = 200) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
-                        const size = 200;
-                        canvas.width = size;
-                        canvas.height = size;
+                        canvas.width = maxSize;
+                        canvas.height = maxSize;
                         const ctx = canvas.getContext('2d');
                         
+                        // 居中裁剪为正方形
                         let sx = 0, sy = 0, sw = img.width, sh = img.height;
                         if (img.width > img.height) {
                             sx = (img.width - img.height) / 2;
@@ -558,9 +708,11 @@
                             sh = img.width;
                         }
                         
-                        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
-                        const base64 = canvas.toDataURL('image/jpeg', 0.7);
-                        resolve(base64);
+                        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, maxSize, maxSize);
+                        
+                        canvas.toBlob(blob => {
+                            resolve(blob);
+                        }, 'image/jpeg', 0.8);
                     };
                     img.onerror = reject;
                     img.src = e.target.result;
@@ -569,28 +721,102 @@
                 reader.readAsDataURL(file);
             });
         }
-
-        // 显示提示
-        function showToast(message) {
-            const existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
+        
+        // 上传头像到 GitHub
+        async function uploadAvatarToGitHub(file) {
+            const token = await getGitHubToken();
+            const timestamp = Date.now();
+            const ext = 'jpg';  // 统一转为 jpg
+            const filename = `${currentUser.username}_${timestamp}.${ext}`;
+            const path = `avatars/${filename}`;
+            
+            // 压缩并转为 base64
+            const compressedBlob = await compressAvatar(file);
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(compressedBlob);
+            });
+            
+            // 确保 avatars 文件夹存在
+            const folderUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/avatars?ref=${GITHUB_CONFIG.branch}`;
+            const folderRes = await fetch(folderUrl, { headers: { Authorization: `token ${token}` } });
+            
+            if (folderRes.status === 404) {
+                // 创建 avatars 文件夹（通过 .gitkeep）
+                await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/avatars/.gitkeep`, {
+                    method: 'PUT',
+                    headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: '创建 avatars 文件夹',
+                        content: '',
+                        branch: GITHUB_CONFIG.branch
+                    })
+                });
+            }
+            
+            // 上传头像文件
+            const uploadUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${path}`;
+            const uploadRes = await fetch(uploadUrl, {
+                method: 'PUT',
+                headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: `上传头像: ${currentUser.username}`,
+                    content: base64,
+                    branch: GITHUB_CONFIG.branch
+                })
+            });
+            
+            if (!uploadRes.ok) {
+                const err = await uploadRes.text();
+                throw new Error(`上传失败: ${err}`);
+            }
+            
+            const avatarUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${path}`;
+            
+            // 删除旧头像
+            const users = await readGitHubFile('users.json') || {};
+            const oldAvatar = users[currentUser.username]?.avatar;
+            if (oldAvatar && oldAvatar.startsWith('avatars/')) {
+                try {
+                    const oldPath = oldAvatar;
+                    const deleteUrl = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${oldPath}`;
+                    const oldFileRes = await fetch(deleteUrl, { headers: { Authorization: `token ${token}` } });
+                    if (oldFileRes.ok) {
+                        const oldData = await oldFileRes.json();
+                        await fetch(deleteUrl, {
+                            method: 'DELETE',
+                            headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                message: `删除旧头像: ${currentUser.username}`,
+                                sha: oldData.sha,
+                                branch: GITHUB_CONFIG.branch
+                            })
+                        });
+                    }
+                } catch(e) {
+                    console.log('删除旧头像失败（可忽略）', e);
+                }
+            }
+            
+            return { url: avatarUrl, path: path };
         }
-
+        
+        // ========== 用户数据操作 ==========
         // 加载用户数据
         async function loadUserData() {
             try {
                 const users = await readGitHubFile('users.json') || {};
                 const userData = users[currentUser.username];
+                
                 if (userData) {
+                    // 基本信息
                     document.getElementById('nickname').value = userData.nickname || currentUser.username;
                     document.getElementById('bio').value = userData.bio || '';
                     document.getElementById('birthday').value = userData.birthday || '';
                     
+                    // 性别
                     if (userData.gender === 'male') {
                         document.querySelector('input[value="male"]').checked = true;
                     } else if (userData.gender === 'female') {
@@ -599,12 +825,18 @@
                         document.querySelector('input[value="secret"]').checked = true;
                     }
                     
-                    avatarBase64 = userData.avatar || null;
-                    if (avatarBase64) {
-                        const img = document.createElement('img');
-                        img.src = avatarBase64;
+                    // 头像
+                    if (userData.avatar) {
+                        currentAvatarPath = userData.avatar;
+                        const avatarUrl = getAvatarUrl(userData.avatar);
                         const preview = document.getElementById('avatarPreview');
                         preview.innerHTML = '';
+                        const img = document.createElement('img');
+                        img.src = avatarUrl;
+                        img.onerror = () => {
+                            // 图片加载失败，显示文字
+                            preview.innerHTML = `<span id="avatarText">${(userData.nickname || currentUser.username).charAt(0)}</span><div class="avatar-overlay">点击更换头像</div>`;
+                        };
                         preview.appendChild(img);
                         const overlay = document.createElement('div');
                         overlay.className = 'avatar-overlay';
@@ -614,58 +846,143 @@
                         document.getElementById('avatarText').textContent = (userData.nickname || currentUser.username).charAt(0);
                     }
                 }
-            } catch (e) {
+            } catch(e) {
                 console.error('加载用户数据失败', e);
+                showToast('加载用户数据失败');
             }
         }
-
+        
         // 保存用户数据
         async function saveUserData() {
+            if (isUploading) {
+                showToast('请等待头像上传完成');
+                return;
+            }
+            
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '保存中...';
+            saveBtn.disabled = true;
+            
             try {
                 const users = await readGitHubFile('users.json') || {};
                 const gender = document.querySelector('input[name="gender"]:checked').value;
+                const newNickname = document.getElementById('nickname').value.trim() || currentUser.username;
                 
                 users[currentUser.username] = {
                     ...users[currentUser.username],
                     password: users[currentUser.username].password,
-                    nickname: document.getElementById('nickname').value.trim() || currentUser.username,
+                    nickname: newNickname,
                     bio: document.getElementById('bio').value,
                     birthday: document.getElementById('birthday').value,
                     gender: gender,
-                    avatar: avatarBase64
+                    avatar: currentAvatarPath
                 };
                 
                 await writeGitHubFile('users.json', users, `更新用户资料: ${currentUser.username}`);
                 
-                // 更新当前用户信息
-                currentUser.nickname = users[currentUser.username].nickname;
+                // 更新 localStorage 中的当前用户信息
+                currentUser.nickname = newNickname;
                 localStorage.setItem('chatUser', JSON.stringify(currentUser));
                 
                 showToast('保存成功');
-            } catch (e) {
+            } catch(e) {
                 console.error('保存失败', e);
                 showToast('保存失败，请重试');
+            } finally {
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
             }
         }
-
+        
         // 重置表单
-        function resetForm() {
-            loadUserData();
+        async function resetForm() {
+            if (isUploading) {
+                showToast('请等待头像上传完成');
+                return;
+            }
+            await loadUserData();
             showToast('已重置');
         }
-
+        
+        // ========== 头像上传处理 ==========
+        async function handleAvatarUpload(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('请选择图片文件');
+                return false;
+            }
+            
+            // 检查文件大小（限制 2MB）
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('图片不能超过 2MB');
+                return false;
+            }
+            
+            const statusDiv = document.getElementById('uploadStatus');
+            const originalText = statusDiv.textContent;
+            statusDiv.textContent = '上传中...';
+            statusDiv.style.color = 'var(--primary-color)';
+            isUploading = true;
+            
+            try {
+                const result = await uploadAvatarToGitHub(file);
+                currentAvatarPath = result.path;
+                
+                // 更新预览
+                const preview = document.getElementById('avatarPreview');
+                preview.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = result.url;
+                img.onload = () => {
+                    statusDiv.textContent = '头像已上传，请点击保存';
+                    statusDiv.style.color = 'var(--primary-color)';
+                };
+                img.onerror = () => {
+                    statusDiv.textContent = '上传成功，但预览加载失败';
+                    statusDiv.style.color = 'var(--danger-color)';
+                };
+                preview.appendChild(img);
+                const overlay = document.createElement('div');
+                overlay.className = 'avatar-overlay';
+                overlay.textContent = '点击更换头像';
+                preview.appendChild(overlay);
+                
+                return true;
+            } catch(e) {
+                console.error('上传失败', e);
+                statusDiv.textContent = '上传失败：' + (e.message || '未知错误');
+                statusDiv.style.color = 'var(--danger-color)';
+                showToast('上传失败，请重试');
+                return false;
+            } finally {
+                isUploading = false;
+                setTimeout(() => {
+                    if (statusDiv.textContent === '上传中...') {
+                        statusDiv.textContent = '';
+                    }
+                }, 3000);
+            }
+        }
+        
+        // ========== 其他功能 ==========
         // 修改密码
         async function changePassword() {
             const oldPwd = prompt('请输入当前密码');
-            if (!oldPwd) return;
+            if (oldPwd === null) return;
+            if (!oldPwd) {
+                showToast('请输入当前密码');
+                return;
+            }
             
             const newPwd = prompt('请输入新密码（至少3位）');
+            if (newPwd === null) return;
             if (!newPwd || newPwd.length < 3) {
-                showToast('密码至少3位');
+                showToast('密码至少需要3位');
                 return;
             }
             
             const confirmPwd = prompt('请再次输入新密码');
+            if (confirmPwd === null) return;
             if (newPwd !== confirmPwd) {
                 showToast('两次输入的密码不一致');
                 return;
@@ -686,14 +1003,15 @@
                     localStorage.removeItem('chatUser');
                     window.location.href = 'index.html';
                 }, 1500);
-            } catch (e) {
-                showToast('修改失败');
+            } catch(e) {
+                console.error(e);
+                showToast('修改失败，请重试');
             }
         }
-
+        
         // 清除聊天记录
         async function clearChatHistory() {
-            if (!confirm('确定要清除所有聊天记录吗？此操作不可恢复。')) return;
+            if (!confirm('确定要清除所有聊天记录吗？\n此操作不可恢复！')) return;
             
             try {
                 const token = await getGitHubToken();
@@ -702,11 +1020,12 @@
                 const infoRes = await fetch(`https://api.github.com/gists/${MESSAGES_GIST_ID}`, {
                     headers: { Authorization: `token ${token}` }
                 });
-                if (!infoRes.ok) throw new Error('获取失败');
+                if (!infoRes.ok) throw new Error('获取消息失败');
+                
                 const info = await infoRes.json();
                 const fileSha = info.files['messages.json'].sha;
                 
-                await fetch(`https://api.github.com/gists/${MESSAGES_GIST_ID}`, {
+                const updRes = await fetch(`https://api.github.com/gists/${MESSAGES_GIST_ID}`, {
                     method: 'PATCH',
                     headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -718,47 +1037,62 @@
                         }
                     })
                 });
-                showToast('聊天记录已清除');
-            } catch (e) {
-                showToast('清除失败');
+                
+                if (updRes.ok) {
+                    showToast('聊天记录已清除');
+                } else {
+                    throw new Error('清除失败');
+                }
+            } catch(e) {
+                console.error(e);
+                showToast('清除失败，请重试');
             }
         }
-
-        // 主题切换
+        
+        // 退出登录
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('chatUser');
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // ========== 主题切换 ==========
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            currentTheme = theme;
+            const toggleBtn = document.getElementById('themeToggle');
+            if (theme === 'dark') {
+                toggleBtn.textContent = '浅色模式';
+            } else {
+                toggleBtn.textContent = '深色模式';
+            }
+            localStorage.setItem('settingTheme', theme);
+        }
+        
         function toggleTheme() {
-            if (currentTheme === 'light') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                currentTheme = 'dark';
-                localStorage.setItem('theme', 'dark');
-                document.getElementById('themeToggle').textContent = '浅色模式';
-            } else {
-                document.documentElement.setAttribute('data-theme', 'light');
-                currentTheme = 'light';
-                localStorage.setItem('theme', 'light');
-                document.getElementById('themeToggle').textContent = '深色模式';
-            }
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(newTheme);
         }
-
+        
         function initTheme() {
-            const saved = localStorage.getItem('theme');
-            if (saved === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-                currentTheme = 'dark';
-                document.getElementById('themeToggle').textContent = '浅色模式';
-            } else {
-                document.documentElement.setAttribute('data-theme', 'light');
-                currentTheme = 'light';
-                document.getElementById('themeToggle').textContent = '深色模式';
-            }
+            const saved = localStorage.getItem('settingTheme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = saved || (prefersDark ? 'dark' : 'light');
+            applyTheme(theme);
         }
-
-        // 头像上传
+        
+        // ========== 头像上传 UI 初始化 ==========
         function initAvatarUpload() {
             const preview = document.getElementById('avatarPreview');
             const fileInput = document.getElementById('avatarInput');
             const changeBtn = document.getElementById('changeAvatarBtn');
             
             const openFileDialog = () => {
+                if (isUploading) {
+                    showToast('请等待当前上传完成');
+                    return;
+                }
                 fileInput.value = '';
                 fileInput.click();
             };
@@ -768,65 +1102,70 @@
             
             fileInput.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
-                if (file && (file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/jpg')) {
-                    try {
-                        const base64 = await compressAvatar(file);
-                        avatarBase64 = base64;
-                        
-                        const img = document.createElement('img');
-                        img.src = base64;
-                        preview.innerHTML = '';
-                        preview.appendChild(img);
-                        const overlay = document.createElement('div');
-                        overlay.className = 'avatar-overlay';
-                        overlay.textContent = '点击更换头像';
-                        preview.appendChild(overlay);
-                        
-                        showToast('头像已更换，请点击保存');
-                    } catch (err) {
-                        showToast('图片处理失败');
-                    }
-                } else {
-                    showToast('请选择 JPG 或 PNG 格式的图片');
+                if (file) {
+                    await handleAvatarUpload(file);
                 }
+                fileInput.value = '';
             });
         }
-
-        // 页面初始化
+        
+        // ========== 页面初始化 ==========
         async function init() {
+            // 检查登录状态
             const savedUser = localStorage.getItem('chatUser');
             if (!savedUser) {
+                alert('请先登录');
                 window.location.href = 'index.html';
                 return;
             }
             
             currentUser = JSON.parse(savedUser);
             
-            document.getElementById('userId').value = currentUser.username;
-            
-            const registerTime = localStorage.getItem(`register_${currentUser.username}`);
-            if (registerTime) {
-                document.getElementById('registerTime').value = new Date(parseInt(registerTime)).toLocaleDateString();
-            } else {
-                document.getElementById('registerTime').value = '未知';
+            // 验证用户是否存在
+            try {
+                const users = await readGitHubFile('users.json') || {};
+                if (!users[currentUser.username]) {
+                    alert('用户不存在，请重新登录');
+                    localStorage.removeItem('chatUser');
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                // 显示用户ID
+                document.getElementById('userId').value = currentUser.username;
+                
+                // 设置注册时间
+                if (users[currentUser.username].registerTime) {
+                    document.getElementById('registerTime').value = new Date(users[currentUser.username].registerTime).toLocaleDateString();
+                } else {
+                    document.getElementById('registerTime').value = '未知';
+                }
+                
+                await loadUserData();
+            } catch(e) {
+                console.error('初始化失败', e);
+                showToast('加载用户信息失败');
             }
             
-            await loadUserData();
-            
+            // 初始化主题
             initTheme();
+            
+            // 初始化头像上传
             initAvatarUpload();
             
+            // 绑定事件
             document.getElementById('backBtn').addEventListener('click', () => {
                 window.location.href = 'index.html';
             });
-            
             document.getElementById('saveBtn').addEventListener('click', saveUserData);
             document.getElementById('resetBtn').addEventListener('click', resetForm);
             document.getElementById('themeToggle').addEventListener('click', toggleTheme);
             document.getElementById('changePasswordBtn').addEventListener('click', changePassword);
             document.getElementById('clearHistoryBtn').addEventListener('click', clearChatHistory);
+            document.getElementById('logoutBtn').addEventListener('click', logout);
         }
         
+        // 启动
         init();
     </script>
 </body>
