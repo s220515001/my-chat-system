@@ -3093,43 +3093,45 @@ function tryResumeAudio() {
         }
         
         // ========== 语音消息 ==========
-        if (m.type === 'voice') {
-            const duration = m.duration || 3;
-            const voiceHtml = `
-                <div class="voice-message" data-voice-data="${m.content}" onclick="window.playVoiceMessage && window.playVoiceMessage(this.dataset.voiceData, ${duration})">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="9" y="2" width="6" height="12" rx="3"/>
-                        <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
-                        <line x1="12" y1="19" x2="12" y2="22"/>
-                    </svg>
-                    <span class="voice-duration">${duration}秒</span>
-                    <div class="voice-wave">
-                        <span></span><span></span><span></span><span></span>
-                    </div>
-                </div>
-            `;
-            
-            if (!isOwn && activeChat.type === 'group') {
-                return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
-                    ${avatarHtml}
-                    <div class="message-bubble${bubbleClass}">
-                        ${senderLabel}
-                        ${quoteHtml}
-                        ${voiceHtml}
-                        <div class="message-time">${statusIconHtml}${time}</div>
-                    </div>
-                </div>`;
-            } else {
-                return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
-                    <div class="message-bubble${bubbleClass}">
-                        ${senderLabel}
-                        ${quoteHtml}
-                        ${voiceHtml}
-                        <div class="message-time">${statusIconHtml}${time}</div>
-                    </div>
-                </div>`;
-            }
-        }
+        // ========== 语音消息 ==========
+if (m.type === 'voice') {
+    const duration = m.duration || 3;
+    // 使用 data-voice 属性存储数据，避免内联 onclick
+    const voiceHtml = `
+        <div class="voice-message" data-voice-data="${m.content}" data-voice-duration="${duration}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="2" width="6" height="12" rx="3"/>
+                <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+            </svg>
+            <span class="voice-duration">${duration}秒</span>
+            <div class="voice-wave">
+                <span></span><span></span><span></span><span></span>
+            </div>
+        </div>
+    `;
+    
+    if (!isOwn && activeChat.type === 'group') {
+        return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
+            ${avatarHtml}
+            <div class="message-bubble${bubbleClass}">
+                ${senderLabel}
+                ${quoteHtml}
+                ${voiceHtml}
+                <div class="message-time">${statusIconHtml}${time}</div>
+            </div>
+        </div>`;
+    } else {
+        return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
+            <div class="message-bubble${bubbleClass}">
+                ${senderLabel}
+                ${quoteHtml}
+                ${voiceHtml}
+                <div class="message-time">${statusIconHtml}${time}</div>
+            </div>
+        </div>`;
+    }
+}
         
         // ========== 图片消息 ==========
         if (m.type === 'image') {
@@ -3258,24 +3260,45 @@ function rebindMessageEvents() {
     // 右键菜单
     bindContextMenuEvents();
 
-    // 图片预览和引用跳转
+    // 图片预览和引用跳转、语音播放
     container.addEventListener('click', function(e) {
+        // 图片预览
         const img = e.target.closest('.msg-image');
         if (img && img.dataset.full && window._showImagePreview) {
             e.stopPropagation();
             window._showImagePreview(img.dataset.full);
         }
         
+        // 引用跳转
         const quoteBlock = e.target.closest('.quote-block');
         if (quoteBlock && quoteBlock.dataset.quoteMsgId && window._scrollToQuotedMessage) {
             e.stopPropagation();
             window._scrollToQuotedMessage(parseInt(quoteBlock.dataset.quoteMsgId));
         }
         
+        // 消息重试
         const icon = e.target.closest('.msg-status-icon');
         if (icon && icon.dataset.status === 'failed' && icon.dataset.clientMsgId) {
             e.stopPropagation();
             retryMessage(icon.dataset.clientMsgId);
+        }
+        
+        // ========== 语音消息播放 ==========
+        const voiceMsg = e.target.closest('.voice-message');
+        if (voiceMsg) {
+            e.stopPropagation();
+            const base64Data = voiceMsg.dataset.voiceData;
+            const duration = voiceMsg.dataset.voiceDuration;
+            if (base64Data) {
+                try {
+                    const audio = new Audio(base64Data);
+                    audio.play();
+                    showToast(`播放语音 ${duration}秒`);
+                } catch(err) {
+                    console.error('播放失败', err);
+                    showToast('语音播放失败');
+                }
+            }
         }
     });
 
@@ -3290,41 +3313,7 @@ function rebindMessageEvents() {
     }, true);
 
     bindLongPressEvents();
-}            function bindContextMenuEvents() {
-    const container = document.getElementById('messagesContainer');
-    if (!container) return;
-
-    // 移除旧的监听器（避免重复绑定）
-    container.removeEventListener('contextmenu', container._ctxMenuHandler);
-    container.removeEventListener('click', container._ctxMenuClickHandler);
-
-    // 右键菜单
-    const ctxHandler = function(e) {
-        const messageRow = e.target.closest('.message-row');
-        if (!messageRow) return;
-        e.preventDefault();
-        hideContextMenu();
-        try {
-            const rawData = messageRow.dataset.messageData;
-            if (rawData) {
-                const msgData = JSON.parse(decodeURIComponent(rawData));
-                showContextMenu(e, msgData);
-            }
-        } catch (ex) {}
-    };
-    container._ctxMenuHandler = ctxHandler;
-    container.addEventListener('contextmenu', ctxHandler);
-
-    // 点击其他区域关闭菜单
-    const clickHandler = function(e) {
-        if (activeContextMenu && !e.target.closest('.context-menu')) {
-            hideContextMenu();
-        }
-    };
-    container._ctxMenuClickHandler = clickHandler;
-    container.addEventListener('click', clickHandler);
-}
-            function bindLongPressEvents() {
+}z            function bindLongPressEvents() {
                 const container = document.getElementById('messagesContainer');
                 container.addEventListener('touchstart', function(e) {
                     const messageRow = e.target.closest('.message-row');
@@ -3376,6 +3365,7 @@ function rebindMessageEvents() {
             // 暴露全局函数
             window._showImagePreview = showImagePreview;
             window._scrollToQuotedMessage = scrollToMessage;
+	window.playVoiceMessage = playVoiceMessage; 
 
             async function switchChat(chatId, type, name) {
     hideContextMenu();
