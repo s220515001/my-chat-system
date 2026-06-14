@@ -3139,7 +3139,7 @@ function rebindMessageEvents() {
         }
     }
     
-    // 判断当前用户是否是群主或管理员（用于显示群管理按钮）
+    // 判断当前用户是否是群主或管理员（用于显示群管理按钮和审批按钮）
     let isGroupOwner = false;
     let isGroupAdmin = false;
     if (type === 'group') {
@@ -3147,6 +3147,16 @@ function rebindMessageEvents() {
         if (group) {
             isGroupOwner = group.owner === currentUser.username;
             isGroupAdmin = group.admins?.includes(currentUser.username);
+        }
+    }
+    
+    // 获取待审批数量（用于显示角标）
+    let pendingCount = 0;
+    if (type === 'group' && (isGroupOwner || isGroupAdmin)) {
+        const group = groupsData.find(g => g.id === chatId);
+        if (group) {
+            const requests = await readGitHubFile('invite_requests.json') || [];
+            pendingCount = requests.filter(r => r.groupId === group.groupId && r.status === 'pending').length;
         }
     }
     
@@ -3176,6 +3186,16 @@ function rebindMessageEvents() {
                 群管理
             </button>
             ` : ''}
+            ${type === 'group' && (isGroupOwner || isGroupAdmin) ? `
+            <button class="group-approve-btn" id="groupApproveBtn" style="background:#f39c12; border:none; border-radius:8px; padding:6px 12px; color:white; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:4px; position:relative;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                审批
+                ${pendingCount > 0 ? `<span style="position:absolute; top:-5px; right:-5px; background:#e74c3c; color:white; font-size:10px; border-radius:50%; min-width:16px; height:16px; display:flex; align-items:center; justify-content:center; padding:0 4px;">${pendingCount}</span>` : ''}
+            </button>
+            ` : ''}
             <button class="add-member-header-btn" id="addMemberBtn" style="display: ${type === 'group' ? 'block' : 'none'};">添加成员</button>
             <button class="back-to-admin-btn" id="backToAdminBtn" style="display: none;">返回管理</button>
         </div>
@@ -3188,6 +3208,13 @@ function rebindMessageEvents() {
         document.getElementById('groupManageBtn')?.addEventListener('click', () => {
             if (group) {
                 showGroupManageModal(group);
+            }
+        });
+        
+        // 绑定审批按钮事件
+        document.getElementById('groupApproveBtn')?.addEventListener('click', () => {
+            if (group) {
+                showApprovalModal(group.groupId);
             }
         });
     }
@@ -3219,7 +3246,79 @@ function rebindMessageEvents() {
     renderGroupsList(groupsData);
     bindSendEvents();
 }
+// 显示审批弹窗
+async function showApprovalModal(groupId) {
+    const requests = await readGitHubFile('invite_requests.json') || [];
+    const groupRequests = requests.filter(r => r.groupId === groupId && r.status === 'pending');
+    
+    if (groupRequests.length === 0) {
+        showToast('暂无待审批的邀请请求');
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="width: 400px; max-width: 90vw;">
+            <h4>邀请审批</h4>
+            <div style="max-height: 400px; overflow-y: auto;">
+                ${groupRequests.map(req => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color);">
+                        <div>
+                            <div><strong>${escapeHtml(req.targetUser)}</strong></div>
+                            <div style="font-size: 12px; color: var(--text-secondary);">邀请人: ${escapeHtml(req.inviter)}</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">${new Date(req.timestamp).toLocaleString()}</div>
+                        </div>
+                        <div>
+                            <button class="approve-btn" data-request-id="${req.id}" style="background:#1abc9c; border:none; border-radius:4px; padding:4px 12px; color:white; font-size:12px; cursor:pointer; margin-right:4px;">通过</button>
+                            <button class="reject-btn" data-request-id="${req.id}" style="background:#e74c3c; border:none; border-radius:4px; padding:4px 12px; color:white; font-size:12px; cursor:pointer;">拒绝</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <button class="close" id="closeModal" style="margin-top:16px; width:100%; padding:10px; background:#95a5a6; color:white; border:none; border-radius:8px; cursor:pointer;">关闭</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // 通过审批
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const requestId = parseInt(btn.dataset.requestId);
+            const request = groupRequests.find(r => r.id === requestId);
+            if (request) {
+                await addMemberToGroup(groupId, request.targetUser);
+                await updateRequestStatus(requestId, 'approved');
+                showToast(`已通过 ${request.targetUser} 的入群申请`);
+                modal.remove();
+                location.reload();
+            }
+        });
+    });
+    
+    // 拒绝审批
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const requestId = parseInt(btn.dataset.requestId);
+            await updateRequestStatus(requestId, 'rejected');
+            showToast('已拒绝申请');
+            modal.remove();
+            location.reload();
+        });
+    });
+    
+    document.getElementById('closeModal').onclick = () => modal.remove();
+}
 
+// 更新邀请请求状态
+async function updateRequestStatus(requestId, status) {
+    const requests = await readGitHubFile('invite_requests.json') || [];
+    const idx = requests.findIndex(r => r.id === requestId);
+    if (idx !== -1) {
+        requests[idx].status = status;
+        await writeGitHubFile('invite_requests.json', requests, `更新审批状态: ${status}`);
+    }
+}
             function bindSendEvents() {
                 const sendBtn = document.getElementById('sendBtn');
                 const input = document.getElementById('messageInput');
