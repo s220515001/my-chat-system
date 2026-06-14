@@ -5307,22 +5307,7 @@ initVoiceRecording();
                 }
             });
 
-            const saved = localStorage.getItem('chatUser');
-if (saved) {
-    currentUser = JSON.parse(saved);
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    initTheme();
-    if (currentUser.isAdmin) {
-        document.getElementById('sidebar').style.display = 'none';
-        document.getElementById('chatArea').style.display = 'none';
-        initAdminPanel();
-    } else {
-        document.getElementById('adminPanel').style.display = 'none';
-        initAfterLogin();
-    }
-}
-
+            
             document.getElementById('submitBtn').onclick = handleSubmit;
             document.getElementById('toggleFormBtn').onclick = (e) => {
                 e.preventDefault();
@@ -5335,7 +5320,26 @@ if (saved) {
                 document.getElementById('formMessage').className = 'error';
             };
             document.getElementById('loginPassword').onkeypress = (e) => { if (e.key === 'Enter') handleSubmit(); };
-
+		// ========== 初始化：检查登录状态 ==========
+(async function initApp() {
+    const saved = localStorage.getItem('chatUser');
+    if (saved) {
+        currentUser = JSON.parse(saved);
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        initTheme();
+        if (currentUser.isAdmin) {
+            document.getElementById('sidebar').style.display = 'none';
+            document.getElementById('chatArea').style.display = 'none';
+            initAdminPanel();
+        } else {
+            document.getElementById('adminPanel').style.display = 'none';
+            await initAfterLogin();
+        }
+    } else {
+        document.getElementById('loginOverlay').style.display = 'flex';
+    }
+})();
             window.addEventListener('beforeunload', () => { saveUnread();
                 saveLastSeen(); });
         })();
