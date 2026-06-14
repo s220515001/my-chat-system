@@ -3453,46 +3453,63 @@ async function addMemberToGroup(groupId, member) {
     return true;
 }
 // 群管理弹窗（完整版）
+// 群管理弹窗（完整版）- 修复版
 function showGroupManageModal(group) {
-    const isOwner = group.owner === currentUser.username;
-    const isAdmin = group.admins?.includes(currentUser.username);
+    // 重新从 groupsData 获取最新的群信息，确保数据正确
+    const latestGroup = groupsData.find(g => g.id === group.id);
+    if (!latestGroup) {
+        showToast('群信息加载失败');
+        return;
+    }
+    
+    const isOwner = latestGroup.owner === currentUser.username;
+    const isAdmin = latestGroup.admins?.includes(currentUser.username);
+    
+    console.log('群管理调试:', {
+        groupName: latestGroup.groupName,
+        owner: latestGroup.owner,
+        currentUser: currentUser.username,
+        isOwner: isOwner,
+        isAdmin: isAdmin,
+        admins: latestGroup.admins
+    });
     
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.innerHTML = `
         <div class="modal-content" style="width: 450px; max-width: 90vw;">
-            <h4>群管理 - ${group.groupName}</h4>
+            <h4>群管理 - ${latestGroup.groupName}</h4>
             <div style="max-height: 500px; overflow-y: auto;">
                 ${isOwner ? `
                 <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
                     <div style="font-weight: bold; margin-bottom: 12px;">群聊设置</div>
                     <div style="margin-bottom: 12px;">
                         <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <span>🔐 邀请确认 (需管理员审批)</span>
-                            <input type="checkbox" id="inviteConfirm" ${group.settings?.inviteConfirm ? 'checked' : ''}>
+                            <span>邀请确认 (需管理员审批)</span>
+                            <input type="checkbox" id="inviteConfirm" ${latestGroup.settings?.inviteConfirm ? 'checked' : ''}>
                         </label>
                         <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">开启后，成员邀请需要管理员确认</div>
                     </div>
                     <div style="margin-bottom: 12px;">
                         <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <span>👥 允许普通成员邀请</span>
-                            <input type="checkbox" id="memberInvite" ${group.settings?.memberInvite ? 'checked' : ''}>
+                            <span>允许普通成员邀请</span>
+                            <input type="checkbox" id="memberInvite" ${latestGroup.settings?.memberInvite ? 'checked' : ''}>
                         </label>
                         <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">关闭后只有管理员可以邀请</div>
                     </div>
                     <div style="margin-bottom: 12px;">
                         <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <span>🔇 全员禁言</span>
-                            <input type="checkbox" id="allMute" ${group.settings?.allMute ? 'checked' : ''}>
+                            <span>全员禁言</span>
+                            <input type="checkbox" id="allMute" ${latestGroup.settings?.allMute ? 'checked' : ''}>
                         </label>
                         <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">开启后仅管理员可发言</div>
                     </div>
                     <div style="margin-bottom: 12px;">
-                        <div style="margin-bottom: 8px;">👋 入群验证</div>
+                        <div style="margin-bottom: 8px;">入群验证</div>
                         <select id="joinVerify" style="width:100%; padding:8px; border-radius:8px;">
-                            <option value="admin" ${group.settings?.joinVerify === 'admin' ? 'selected' : ''}>需要管理员审核</option>
-                            <option value="anyone" ${group.settings?.joinVerify === 'anyone' ? 'selected' : ''}>无需审核直接加入</option>
-                            <option value="none" ${group.settings?.joinVerify === 'none' ? 'selected' : ''}>禁止任何人加入</option>
+                            <option value="admin" ${latestGroup.settings?.joinVerify === 'admin' ? 'selected' : ''}>需要管理员审核</option>
+                            <option value="anyone" ${latestGroup.settings?.joinVerify === 'anyone' ? 'selected' : ''}>无需审核直接加入</option>
+                            <option value="none" ${latestGroup.settings?.joinVerify === 'none' ? 'selected' : ''}>禁止任何人加入</option>
                         </select>
                     </div>
                     <button id="saveSettingsBtn" style="width:100%; padding:8px; margin-top:8px; background:#1abc9c; color:white; border:none; border-radius:8px; cursor:pointer;">保存设置</button>
@@ -3503,15 +3520,20 @@ function showGroupManageModal(group) {
                     <button id="dismissGroupBtn" style="width:100%; padding:10px; margin-bottom:8px; background:#e74c3c; color:white; border:none; border-radius:8px; cursor:pointer;">解散群聊</button>
                     <button id="transferGroupBtn" style="width:100%; padding:10px; background:#f39c12; color:white; border:none; border-radius:8px; cursor:pointer;">转让群主</button>
                 </div>
-                ` : ''}
+                ` : (isAdmin ? `
+                <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+                    <div style="font-weight: bold; margin-bottom: 12px;">管理员提示</div>
+                    <div style="font-size: 13px; color: var(--text-secondary);">作为管理员，您可以移除普通成员和禁言成员</div>
+                </div>
+                ` : '')}
                 
                 <div>
-                    <div style="font-weight: bold; margin-bottom: 12px;">成员列表 (${group.members.length}人)</div>
+                    <div style="font-weight: bold; margin-bottom: 12px;">成员列表 (${latestGroup.members.length}人)</div>
                     <div id="memberList">
-                        ${group.members.map(m => {
-                            const isMemberOwner = m === group.owner;
-                            const isMemberAdmin = group.admins?.includes(m);
-                            const isMuted = group.settings?.mutedMembers?.includes(m);
+                        ${latestGroup.members.map(m => {
+                            const isMemberOwner = m === latestGroup.owner;
+                            const isMemberAdmin = latestGroup.admins?.includes(m);
+                            const isMuted = latestGroup.settings?.mutedMembers?.includes(m);
                             const canManage = isOwner || (isAdmin && !isMemberOwner);
                             return `
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
@@ -3545,10 +3567,10 @@ function showGroupManageModal(group) {
                 memberInvite: document.getElementById('memberInvite').checked,
                 allMute: document.getElementById('allMute').checked,
                 joinVerify: document.getElementById('joinVerify').value,
-                anonymousChat: group.settings?.anonymousChat || false,
-                mutedMembers: group.settings?.mutedMembers || []
+                anonymousChat: latestGroup.settings?.anonymousChat || false,
+                mutedMembers: latestGroup.settings?.mutedMembers || []
             };
-            await updateGroupSettings(group.groupId, newSettings);
+            await updateGroupSettings(latestGroup.groupId, newSettings);
             showToast('设置已保存');
             modal.remove();
             location.reload();
@@ -3556,8 +3578,8 @@ function showGroupManageModal(group) {
         
         // 解散群聊
         document.getElementById('dismissGroupBtn')?.addEventListener('click', async () => {
-            if (confirm(`确定要解散群聊 "${group.groupName}" 吗？`)) {
-                await dismissGroup(group.groupId);
+            if (confirm(`确定要解散群聊 "${latestGroup.groupName}" 吗？`)) {
+                await dismissGroup(latestGroup.groupId);
                 modal.remove();
                 location.reload();
             }
@@ -3566,8 +3588,8 @@ function showGroupManageModal(group) {
         // 转让群主
         document.getElementById('transferGroupBtn')?.addEventListener('click', () => {
             const newOwner = prompt('输入新群主用户名（必须是群成员）');
-            if (newOwner && group.members.includes(newOwner)) {
-                transferGroupOwner(group.groupId, newOwner);
+            if (newOwner && latestGroup.members.includes(newOwner)) {
+                transferGroupOwner(latestGroup.groupId, newOwner);
                 modal.remove();
             } else if (newOwner) {
                 alert('用户不在群聊中');
@@ -3580,7 +3602,7 @@ function showGroupManageModal(group) {
         btn.addEventListener('click', async () => {
             const member = btn.dataset.member;
             if (confirm(`确定移除 ${member} 吗？`)) {
-                await removeMemberFromGroup(group.groupId, member);
+                await removeMemberFromGroup(latestGroup.groupId, member);
                 modal.remove();
                 location.reload();
             }
@@ -3591,7 +3613,7 @@ function showGroupManageModal(group) {
     document.querySelectorAll('.set-admin-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const member = btn.dataset.member;
-            await setGroupAdmin(group.groupId, member, true);
+            await setGroupAdmin(latestGroup.groupId, member, true);
             modal.remove();
             location.reload();
         });
@@ -3601,7 +3623,7 @@ function showGroupManageModal(group) {
     document.querySelectorAll('.remove-admin-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const member = btn.dataset.member;
-            await setGroupAdmin(group.groupId, member, false);
+            await setGroupAdmin(latestGroup.groupId, member, false);
             modal.remove();
             location.reload();
         });
@@ -3611,16 +3633,14 @@ function showGroupManageModal(group) {
     document.querySelectorAll('.mute-member-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const member = btn.dataset.member;
-            await toggleMuteMember(group.groupId, member);
+            await toggleMuteMember(latestGroup.groupId, member);
             modal.remove();
             location.reload();
         });
     });
     
     document.getElementById('closeModal').onclick = () => modal.remove();
-}
-
-// 更新群设置
+}// 更新群设置
 async function updateGroupSettings(groupId, settings) {
     const groups = await readGitHubFile('groups.json') || [];
     const idx = groups.findIndex(g => g.id === groupId);
