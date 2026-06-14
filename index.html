@@ -321,7 +321,203 @@
             flex-shrink: 0;
             position: relative;
         }
+/* ========== @提及功能样式 ========== */
+/* @提及弹窗 */
+.mention-popup {
+    position: fixed;
+    background: var(--menu-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px var(--menu-shadow);
+    z-index: 10000;
+    max-height: 200px;
+    overflow-y: auto;
+    min-width: 160px;
+    animation: fadeIn 0.15s ease;
+}
 
+.mention-popup-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background 0.15s;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.mention-popup-item:last-child {
+    border-bottom: none;
+}
+
+.mention-popup-item:hover {
+    background: var(--menu-hover);
+}
+
+.mention-popup-item strong {
+    font-weight: 600;
+}
+
+.mention-popup-item .mention-username {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-left: 8px;
+}
+
+/* 消息中的@提及高亮 */
+.message-bubble .mention-highlight {
+    background: #e74c3c;
+    color: white;
+    padding: 0 4px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+/* ========== 群公告样式 ========== */
+.group-announcement-bar {
+    background: rgba(241, 196, 15, 0.12);
+    border-left: 3px solid #f39c12;
+    padding: 10px 16px;
+    margin: 0 20px 12px 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.group-announcement-bar:hover {
+    background: rgba(241, 196, 15, 0.2);
+    transform: translateY(-1px);
+}
+
+.group-announcement-bar svg {
+    flex-shrink: 0;
+}
+
+.group-announcement-text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.group-announcement-view {
+    font-size: 11px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+/* ========== 语音消息样式 ========== */
+/* 录音按钮 */
+.voice-btn {
+    transition: all 0.2s;
+}
+
+.voice-btn.recording {
+    background: #e74c3c;
+    color: white;
+    animation: voicePulse 1s infinite;
+    border-color: #e74c3c;
+}
+
+@keyframes voicePulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4);
+    }
+    50% {
+        transform: scale(1.08);
+        box-shadow: 0 0 0 8px rgba(231, 76, 60, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+    }
+}
+
+/* 录音计时器 */
+.recording-timer {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 40px;
+    font-size: 16px;
+    font-weight: 500;
+    z-index: 10000;
+    pointer-events: none;
+    backdrop-filter: blur(8px);
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 语音消息样式 */
+.voice-message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: opacity 0.2s;
+}
+
+.voice-message:hover {
+    opacity: 0.8;
+}
+
+.voice-message svg {
+    flex-shrink: 0;
+}
+
+.voice-duration {
+    font-size: 13px;
+    min-width: 40px;
+}
+
+/* 语音波形动画 */
+.voice-wave {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 4px;
+}
+
+.voice-wave span {
+    width: 3px;
+    background: currentColor;
+    border-radius: 2px;
+    animation: voiceWave 0.8s ease-in-out infinite;
+}
+
+.voice-wave span:nth-child(1) { animation-delay: 0s; height: 8px; }
+.voice-wave span:nth-child(2) { animation-delay: 0.1s; height: 12px; }
+.voice-wave span:nth-child(3) { animation-delay: 0.2s; height: 6px; }
+.voice-wave span:nth-child(4) { animation-delay: 0.3s; height: 10px; }
+
+@keyframes voiceWave {
+    0%, 100% {
+        transform: scaleY(1);
+    }
+    50% {
+        transform: scaleY(0.4);
+    }
+}
+
+/* 自己发送的语音消息波形颜色 */
+.message-row.own .voice-wave span {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* 对方发送的语音消息波形颜色 */
+.message-row:not(.own) .voice-wave span {
+    background: var(--text-primary);
+}
         .contact-info,
         .group-info {
             flex: 1;
@@ -1545,17 +1741,28 @@
                 </div>
             </div>
             <div class="input-area">
-                <button class="image-btn" id="imageBtn" title="发送图片">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                    </svg>
-                </button>
-                <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off">
-                <button class="send-btn" id="sendBtn">发送</button>
-                <input type="file" id="imageFileInput" accept="image/*" capture="environment" style="display:none;">
-            </div>
-        </div>
+    <!-- 录音按钮 -->
+    <button class="voice-btn" id="voiceBtn" title="语音消息" style="width:44px;height:44px;border-radius:50%;border:1px solid var(--image-btn-border);background:var(--image-btn-bg);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="2" width="6" height="12" rx="3"/>
+            <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+        </svg>
+    </button>
+    
+    <!-- 图片按钮 -->
+    <button class="image-btn" id="imageBtn" title="发送图片">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+        </svg>
+    </button>
+    
+    <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off">
+    
+    <button class="send-btn" id="sendBtn">发送</button>
+    <input type="file" id="imageFileInput" accept="image/*" capture="environment" style="display:none;">
+</div>
 
         <!-- 管理员后台面板 -->
         <div id="adminPanel" style="display: none; flex: 1; flex-direction: column; height: 100%;">
@@ -2034,6 +2241,7 @@ function tryResumeAudio() {
                     members: g.members,
                     owner: g.owner || g.members[0],
                     admins: g.admins || [],
+                    announcement: g.announcement || '',  // 新增
                     settings: g.settings || {
                         inviteConfirm: true,
                         memberInvite: true,
@@ -2816,14 +3024,12 @@ function tryResumeAudio() {
         let senderAvatarUrl = null;
         let senderNickname = m.fromNickname || m.from;
         
-        // 从缓存中获取头像（需要在全局维护一个 userAvatars 缓存）
         if (userAvatarsCache && userAvatarsCache[m.from]) {
             senderAvatarUrl = userAvatarsCache[m.from];
         }
         
         let avatarHtml = '';
         if (!isOwn && activeChat.type === 'group') {
-            // 群聊中显示对方头像
             if (senderAvatarUrl) {
                 avatarHtml = `<div class="msg-avatar" style="width:36px;height:36px;flex-shrink:0;margin-right:8px;cursor:pointer;" onclick="viewUserProfile('${m.from}')">
                     <img src="${senderAvatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:white;\\'>${senderNickname.charAt(0)}</div>'">
@@ -2840,6 +3046,25 @@ function tryResumeAudio() {
             senderLabel = '<div class="admin-sender-label" style="font-size:11px;margin-bottom:4px;">管理员</div>';
         } else if (activeChat.type === 'group' && !isOwn) {
             senderLabel = `<div class="msg-sender-name" style="font-size:11px;color:#7f8c8d;margin-bottom:4px;cursor:pointer;" onclick="viewUserProfile('${m.from}')">${escapeHtml(senderNickname)}</div>`;
+        }
+        
+        // 处理消息内容中的@提及高亮
+        let contentHtml = escapeHtml(m.content || '');
+        if (activeChat.type === 'group' && m.content) {
+            // 高亮 @当前用户名
+            if (m.content.includes(`@${currentUser.username}`)) {
+                contentHtml = contentHtml.replace(
+                    new RegExp(`@${escapeRegex(currentUser.username)}`, 'g'),
+                    `<span class="mention-highlight">@${escapeHtml(currentUser.username)}</span>`
+                );
+            }
+            // 高亮 @当前昵称
+            if (currentUser.nickname && m.content.includes(`@${currentUser.nickname}`)) {
+                contentHtml = contentHtml.replace(
+                    new RegExp(`@${escapeRegex(currentUser.nickname)}`, 'g'),
+                    `<span class="mention-highlight">@${escapeHtml(currentUser.nickname)}</span>`
+                );
+            }
         }
         
         // 撤回消息
@@ -2867,7 +3092,46 @@ function tryResumeAudio() {
                 </div>`;
         }
         
-        // 图片消息
+        // ========== 语音消息 ==========
+        if (m.type === 'voice') {
+            const duration = m.duration || 3;
+            const voiceHtml = `
+                <div class="voice-message" data-voice-data="${m.content}" onclick="window.playVoiceMessage && window.playVoiceMessage(this.dataset.voiceData, ${duration})">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="2" width="6" height="12" rx="3"/>
+                        <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
+                        <line x1="12" y1="19" x2="12" y2="22"/>
+                    </svg>
+                    <span class="voice-duration">${duration}秒</span>
+                    <div class="voice-wave">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                </div>
+            `;
+            
+            if (!isOwn && activeChat.type === 'group') {
+                return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
+                    ${avatarHtml}
+                    <div class="message-bubble${bubbleClass}">
+                        ${senderLabel}
+                        ${quoteHtml}
+                        ${voiceHtml}
+                        <div class="message-time">${statusIconHtml}${time}</div>
+                    </div>
+                </div>`;
+            } else {
+                return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
+                    <div class="message-bubble${bubbleClass}">
+                        ${senderLabel}
+                        ${quoteHtml}
+                        ${voiceHtml}
+                        <div class="message-time">${statusIconHtml}${time}</div>
+                    </div>
+                </div>`;
+            }
+        }
+        
+        // ========== 图片消息 ==========
         if (m.type === 'image') {
             const thumbSrc = m.thumbnail || m.content;
             const fullSrc = m.content;
@@ -2903,14 +3167,14 @@ function tryResumeAudio() {
             }
         }
         
-        // 文字消息
+        // ========== 文字消息 ==========
         if (!isOwn && activeChat.type === 'group') {
             return `<div class="message-row ${isOwn ? 'own' : ''}" data-message-id="${m.id}" data-message-data="${encodeURIComponent(JSON.stringify(m))}">
                 ${avatarHtml}
                 <div class="message-bubble${bubbleClass}">
                     ${senderLabel}
                     ${quoteHtml}
-                    <div>${escapeHtml(m.content)}</div>
+                    <div>${contentHtml}</div>
                     <div class="message-time">${statusIconHtml}${time}</div>
                 </div>
             </div>`;
@@ -2919,7 +3183,7 @@ function tryResumeAudio() {
                 <div class="message-bubble${bubbleClass}">
                     ${senderLabel}
                     ${quoteHtml}
-                    <div>${escapeHtml(m.content)}</div>
+                    <div>${contentHtml}</div>
                     <div class="message-time">${statusIconHtml}${time}</div>
                 </div>
             </div>`;
@@ -2928,6 +3192,12 @@ function tryResumeAudio() {
     
     container.scrollTop = container.scrollHeight;
     rebindMessageEvents();
+}
+
+// 辅助函数：转义正则表达式特殊字符
+function escapeRegex(str) {
+    if (!str) return '';
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
             function renderStatusIcon(status, clientMsgId) {
                 switch (status) {
@@ -3142,11 +3412,13 @@ function rebindMessageEvents() {
     // 判断当前用户是否是群主或管理员（用于显示群管理按钮和审批按钮）
     let isGroupOwner = false;
     let isGroupAdmin = false;
+    let groupAnnouncement = '';
     if (type === 'group') {
         const group = groupsData.find(g => g.id === chatId);
         if (group) {
             isGroupOwner = group.owner === currentUser.username;
             isGroupAdmin = group.admins?.includes(currentUser.username);
+            groupAnnouncement = group.announcement || '';
         }
     }
     
@@ -3202,6 +3474,38 @@ function rebindMessageEvents() {
     `;
     chatHeader.innerHTML = headerContent;
     
+    // 获取消息容器
+    const messagesContainer = document.getElementById('messagesContainer');
+    
+    // 构建聊天内容（包含公告栏）
+    let chatContentHtml = '';
+    
+    // 如果有群公告且是群聊，添加公告栏
+    if (type === 'group' && groupAnnouncement) {
+        chatContentHtml = `
+            <div class="group-announcement-bar" onclick="showAnnouncementDetail('${escapeHtml(groupAnnouncement)}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f39c12" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span class="group-announcement-text">${escapeHtml(groupAnnouncement)}</span>
+                <span class="group-announcement-view">查看详情</span>
+            </div>
+        `;
+    }
+    
+    // 添加消息区域（初始为空，后续由 renderMessages 填充）
+    chatContentHtml += `<div id="messagesContainerInner" class="messages-container" style="flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:12px;"></div>`;
+    
+    // 更新 messagesContainer 的内容
+    messagesContainer.innerHTML = chatContentHtml;
+    
+    // 重新绑定消息容器引用
+    const newMessagesContainer = document.getElementById('messagesContainerInner');
+    // 将原来的 messagesContainer 的 id 转移，保持兼容性
+    messagesContainer.id = 'messagesContainerOld';
+    newMessagesContainer.id = 'messagesContainer';
+    
     // 绑定群管理按钮事件
     if (type === 'group') {
         const group = groupsData.find(g => g.id === chatId);
@@ -3245,6 +3549,19 @@ function rebindMessageEvents() {
     renderFriendsList(friendsData);
     renderGroupsList(groupsData);
     bindSendEvents();
+}
+function showAnnouncementDetail(announcement) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="width: 350px; max-width: 90vw;">
+            <h4 style="margin-bottom: 16px;">群公告</h4>
+            <div style="padding: 12px 0; line-height: 1.6; color: var(--text-primary); word-break: break-word;">${escapeHtml(announcement)}</div>
+            <button class="close" id="closeModal" style="margin-top: 20px; width:100%; padding:10px; background:#95a5a6; color:white; border:none; border-radius:8px; cursor:pointer;">关闭</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('closeModal').onclick = () => modal.remove();
 }
 // 显示审批弹窗
 async function showApprovalModal(groupId) {
@@ -3325,7 +3642,135 @@ async function updateRequestStatus(requestId, status) {
                 sendBtn.onclick = sendMessage;
                 input.onkeypress = (e) => { if (e.key === 'Enter') sendMessage(); };
             }
+	// @提及功能：监听输入框的 @ 符号
+function initMentionFeature() {
+    const input = document.getElementById('messageInput');
+    if (!input) return;
+    
+    let mentionPopup = null;
+    let mentionStartPos = -1;
+    
+    input.addEventListener('input', function(e) {
+        if (activeChat.type !== 'group') return;
+        
+        const value = this.value;
+        const cursorPos = this.selectionStart;
+        
+        // 查找最后一个 @ 符号的位置
+        let atPos = -1;
+        for (let i = cursorPos - 1; i >= 0; i--) {
+            if (value[i] === '@') {
+                atPos = i;
+                break;
+            }
+            if (value[i] === ' ' || value[i] === '\n') break;
+        }
+        
+        if (atPos !== -1 && mentionStartPos !== atPos) {
+            mentionStartPos = atPos;
+            const searchTerm = value.substring(atPos + 1, cursorPos);
+            showMentionPopup(searchTerm, atPos);
+        } else if (atPos === -1 && mentionPopup) {
+            hideMentionPopup();
+            mentionStartPos = -1;
+        }
+    });
+    
+    function showMentionPopup(searchTerm, atPos) {
+        const group = groupsData.find(g => g.id === activeChat.id);
+        if (!group) return;
+        
+        // 获取群成员（排除自己）
+        const members = group.members.filter(m => m !== currentUser.username);
+        const users = [];
+        
+        // 异步获取成员昵称
+        (async () => {
+            const usersData = await readGitHubFile('users.json') || {};
+            const matched = members.filter(m => {
+                const nickname = usersData[m]?.nickname || m;
+                return searchTerm === '' || 
+                       m.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       nickname.toLowerCase().includes(searchTerm.toLowerCase());
+            }).slice(0, 5);
+            
+            if (matched.length === 0) {
+                hideMentionPopup();
+                return;
+            }
+            
+            if (mentionPopup) hideMentionPopup();
+            
+            mentionPopup = document.createElement('div');
+            mentionPopup.className = 'mention-popup';
+            mentionPopup.style.cssText = `
+                position: absolute;
+                background: var(--menu-bg);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                z-index: 1000;
+                max-height: 200px;
+                overflow-y: auto;
+                min-width: 150px;
+            `;
+            
+            matched.forEach(m => {
+                const nickname = usersData[m]?.nickname || m;
+                const item = document.createElement('div');
+                item.style.cssText = `
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    color: var(--text-primary);
+                    transition: background 0.15s;
+                `;
+                item.innerHTML = `<strong>${escapeHtml(nickname)}</strong><span style="color:var(--text-secondary);font-size:11px;margin-left:8px;">@${escapeHtml(m)}</span>`;
+                item.onmouseover = () => item.style.background = 'var(--menu-hover)';
+                item.onmouseout = () => item.style.background = '';
+                item.onclick = () => {
+                    insertMention(atPos, m, nickname);
+                    hideMentionPopup();
+                };
+                mentionPopup.appendChild(item);
+            });
+            
+            const rect = input.getBoundingClientRect();
+            mentionPopup.style.left = rect.left + 'px';
+            mentionPopup.style.bottom = (window.innerHeight - rect.top + 5) + 'px';
+            document.body.appendChild(mentionPopup);
+        })();
+    }
+    
+    function insertMention(atPos, username, nickname) {
+        const input = document.getElementById('messageInput');
+        const value = input.value;
+        const beforeAt = value.substring(0, atPos);
+        const afterCursor = value.substring(input.selectionStart);
+        const newValue = beforeAt + `@${nickname} ` + afterCursor;
+        input.value = newValue;
+        input.focus();
+        input.selectionStart = input.selectionEnd = atPos + nickname.length + 2;
+        hideMentionPopup();
+        mentionStartPos = -1;
+    }
+    
+    function hideMentionPopup() {
+        if (mentionPopup) {
+            mentionPopup.remove();
+            mentionPopup = null;
+        }
+    }
+    
+    // 点击其他地方关闭弹窗
+    document.addEventListener('click', function(e) {
+        if (mentionPopup && !mentionPopup.contains(e.target) && e.target !== input) {
+            hideMentionPopup();
+        }
+    });
+}
 
+// 在 中调用
+// 	
             async function sendMessage() {
                 const input = document.getElementById('messageInput');
                 const content = input.value.trim();
@@ -3421,6 +3866,197 @@ async function updateRequestStatus(requestId, status) {
                     quoteCloseBtn.addEventListener('click', clearQuote);
                 }
             }
+		let mediaRecorder = null;
+let audioChunks = [];
+let recordingTimer = null;
+let recordingSeconds = 0;
+let isRecording = false;
+
+// 压缩音频
+async function compressAudio(blob) {
+    return blob;
+}
+
+// 发送语音消息
+async function sendVoiceMessage(chatId, chatType, audioBlob) {
+    const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(audioBlob);
+    });
+    
+    const duration = recordingSeconds;
+    
+    return await sendMessageToChat(chatId, chatType, base64, 'voice', {
+        duration: duration,
+        mimeType: audioBlob.type
+    });
+}
+
+// 播放语音
+function playVoiceMessage(base64Data, duration) {
+    const audio = new Audio(base64Data);
+    audio.play();
+    showToast(`播放语音 ${duration}秒`);
+}
+
+// 初始化录音功能
+function initVoiceRecording() {
+    const voiceBtn = document.getElementById('voiceBtn');
+    if (!voiceBtn) return;
+    
+    let longPressTimer = null;
+    let startY = 0;
+    let isCanceling = false;
+    
+    voiceBtn.addEventListener('mousedown', startRecording);
+    voiceBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startY = e.touches[0].clientY;
+        startRecording(e);
+    });
+    
+    voiceBtn.addEventListener('mouseup', stopRecording);
+    voiceBtn.addEventListener('mouseleave', cancelRecording);
+    voiceBtn.addEventListener('touchend', stopRecording);
+    voiceBtn.addEventListener('touchmove', (e) => {
+        const currentY = e.touches[0].clientY;
+        if (startY - currentY > 50) {
+            isCanceling = true;
+            voiceBtn.style.background = '#95a5a6';
+            showToast('上滑取消发送');
+        } else {
+            isCanceling = false;
+            voiceBtn.style.background = '';
+        }
+    });
+    
+    async function startRecording(e) {
+        if (!activeChat.id) {
+            alert('请先选择聊天对象');
+            return;
+        }
+        if (isRecording) return;
+        
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            audioChunks = [];
+            recordingSeconds = 0;
+            isRecording = true;
+            
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
+            
+            mediaRecorder.onstop = async () => {
+                stream.getTracks().forEach(track => track.stop());
+                
+                if (!isCanceling && audioChunks.length > 0) {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    if (recordingSeconds >= 1) {
+                        const result = await sendVoiceMessage(activeChat.id, activeChat.type, audioBlob);
+                        if (!result.ok) {
+                            showToast('语音发送失败');
+                        }
+                    } else {
+                        showToast('录音时间太短');
+                    }
+                }
+                
+                cleanRecording();
+            };
+            
+            mediaRecorder.start(100);
+            startTimer();
+            
+            voiceBtn.classList.add('recording');
+            showRecordingTimer();
+            
+            if (navigator.vibrate) navigator.vibrate(50);
+        } catch (err) {
+            console.error('录音失败', err);
+            showToast('无法录音，请检查麦克风权限');
+        }
+    }
+    
+    function stopRecording() {
+        if (!isRecording) return;
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+        }
+        isCanceling = false;
+        stopTimer();
+        hideRecordingTimer();
+        voiceBtn.classList.remove('recording');
+        voiceBtn.style.background = '';
+        isRecording = false;
+    }
+    
+    function cancelRecording() {
+        if (!isRecording) return;
+        isCanceling = true;
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+        }
+        stopTimer();
+        hideRecordingTimer();
+        voiceBtn.classList.remove('recording');
+        voiceBtn.style.background = '';
+        isRecording = false;
+        showToast('已取消');
+    }
+    
+    function startTimer() {
+        recordingSeconds = 0;
+        recordingTimer = setInterval(() => {
+            recordingSeconds++;
+            updateRecordingTimer();
+            if (recordingSeconds >= 60) {
+                stopRecording();
+            }
+        }, 1000);
+    }
+    
+    function stopTimer() {
+        if (recordingTimer) {
+            clearInterval(recordingTimer);
+            recordingTimer = null;
+        }
+    }
+    
+    function showRecordingTimer() {
+        let timerDiv = document.getElementById('recordingTimer');
+        if (!timerDiv) {
+            timerDiv = document.createElement('div');
+            timerDiv.id = 'recordingTimer';
+            timerDiv.className = 'recording-timer';
+            document.body.appendChild(timerDiv);
+        }
+        timerDiv.style.display = 'block';
+        updateRecordingTimer();
+    }
+    
+    function updateRecordingTimer() {
+        const timerDiv = document.getElementById('recordingTimer');
+        if (timerDiv) {
+            timerDiv.textContent = `🎙 录音中 ${recordingSeconds}秒`;
+        }
+    }
+    
+    function hideRecordingTimer() {
+        const timerDiv = document.getElementById('recordingTimer');
+        if (timerDiv) {
+            timerDiv.style.display = 'none';
+        }
+    }
+    
+    function cleanRecording() {
+        audioChunks = [];
+        recordingSeconds = 0;
+        isCanceling = false;
+    }
+}
 
             // 弹窗
             function showAddFriendModal() {
@@ -3552,7 +4188,6 @@ async function addMemberToGroup(groupId, member) {
     return true;
 }
 // 群管理弹窗（完整版）
-// 群管理弹窗（完整版）- 修复版
 function showGroupManageModal(group) {
     // 重新从 groupsData 获取最新的群信息，确保数据正确
     const latestGroup = groupsData.find(g => g.id === group.id);
@@ -3564,70 +4199,127 @@ function showGroupManageModal(group) {
     const isOwner = latestGroup.owner === currentUser.username;
     const isAdmin = latestGroup.admins?.includes(currentUser.username);
     
-    console.log('群管理调试:', {
-        groupName: latestGroup.groupName,
-        owner: latestGroup.owner,
-        currentUser: currentUser.username,
-        isOwner: isOwner,
-        isAdmin: isAdmin,
-        admins: latestGroup.admins
-    });
+    // 获取当前群公告
+    const currentAnnouncement = latestGroup.announcement || '';
     
     const modal = document.createElement('div');
     modal.className = 'modal';
     modal.innerHTML = `
-        <div class="modal-content" style="width: 450px; max-width: 90vw;">
-            <h4>群管理 - ${latestGroup.groupName}</h4>
-            <div style="max-height: 500px; overflow-y: auto;">
+        <div class="modal-content" style="width: 480px; max-width: 90vw;">
+            <h4>群管理 - ${escapeHtml(latestGroup.groupName)}</h4>
+            <div style="max-height: 550px; overflow-y: auto; padding-right: 4px;">
+                
                 ${isOwner ? `
+                <!-- ========== 群聊设置（仅群主可见） ========== -->
                 <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
-                    <div style="font-weight: bold; margin-bottom: 12px;">群聊设置</div>
-                    <div style="margin-bottom: 12px;">
-                        <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <span>邀请确认 (需管理员审批)</span>
-                            <input type="checkbox" id="inviteConfirm" ${latestGroup.settings?.inviteConfirm ? 'checked' : ''}>
-                        </label>
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">开启后，成员邀请需要管理员确认</div>
+                    <div style="font-weight: bold; margin-bottom: 12px; color: var(--primary-color);">群聊设置</div>
+                    
+                    <!-- 群公告编辑 -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                            <span>群公告</span>
+                        </div>
+                        <textarea id="groupAnnouncement" maxlength="200" placeholder="输入群公告，将显示在聊天顶部..." style="width:100%; padding:10px; border-radius:10px; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--input-border); resize:vertical; min-height:70px; font-size:13px;">${escapeHtml(currentAnnouncement)}</textarea>
+                        <div style="font-size:11px; color:var(--text-secondary); margin-top:4px;">最多200字，将显示在群聊顶部</div>
                     </div>
-                    <div style="margin-bottom: 12px;">
+                    
+                    <!-- 邀请确认开关 -->
+                    <div style="margin-bottom: 14px;">
                         <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <span>允许普通成员邀请</span>
-                            <input type="checkbox" id="memberInvite" ${latestGroup.settings?.memberInvite ? 'checked' : ''}>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                        <polyline points="22 4 12 14.01 9 11.01"/>
+                                    </svg>
+                                    <span>邀请确认</span>
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-left: 24px;">开启后，成员邀请需要管理员确认</div>
+                            </div>
+                            <input type="checkbox" id="inviteConfirm" ${latestGroup.settings?.inviteConfirm ? 'checked' : ''} style="width: 18px; height: 18px;">
                         </label>
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">关闭后只有管理员可以邀请</div>
                     </div>
-                    <div style="margin-bottom: 12px;">
+                    
+                    <!-- 允许普通成员邀请开关 -->
+                    <div style="margin-bottom: 14px;">
                         <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
-                            <span>全员禁言</span>
-                            <input type="checkbox" id="allMute" ${latestGroup.settings?.allMute ? 'checked' : ''}>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                    <span>允许普通成员邀请</span>
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-left: 24px;">关闭后只有管理员可以邀请</div>
+                            </div>
+                            <input type="checkbox" id="memberInvite" ${latestGroup.settings?.memberInvite ? 'checked' : ''} style="width: 18px; height: 18px;">
                         </label>
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">开启后仅管理员可发言</div>
                     </div>
-                    <div style="margin-bottom: 12px;">
-                        <div style="margin-bottom: 8px;">入群验证</div>
-                        <select id="joinVerify" style="width:100%; padding:8px; border-radius:8px;">
+                    
+                    <!-- 全员禁言开关 -->
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.07.08A10 10 0 0 0 12 17.66a10 10 0 0 0 6.33-2.58l.07-.08z"/>
+                                    </svg>
+                                    <span>全员禁言</span>
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-left: 24px;">开启后仅管理员可发言</div>
+                            </div>
+                            <input type="checkbox" id="allMute" ${latestGroup.settings?.allMute ? 'checked' : ''} style="width: 18px; height: 18px;">
+                        </label>
+                    </div>
+                    
+                    <!-- 入群验证下拉框 -->
+                    <div style="margin-bottom: 14px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            <span>入群验证</span>
+                        </div>
+                        <select id="joinVerify" style="width:100%; padding:8px 12px; border-radius:10px; background:var(--input-bg); color:var(--text-primary); border:1px solid var(--input-border);">
                             <option value="admin" ${latestGroup.settings?.joinVerify === 'admin' ? 'selected' : ''}>需要管理员审核</option>
                             <option value="anyone" ${latestGroup.settings?.joinVerify === 'anyone' ? 'selected' : ''}>无需审核直接加入</option>
                             <option value="none" ${latestGroup.settings?.joinVerify === 'none' ? 'selected' : ''}>禁止任何人加入</option>
                         </select>
                     </div>
-                    <button id="saveSettingsBtn" style="width:100%; padding:8px; margin-top:8px; background:#1abc9c; color:white; border:none; border-radius:8px; cursor:pointer;">保存设置</button>
+                    
+                    <button id="saveSettingsBtn" style="width:100%; padding:10px; margin-top:8px; background:#1abc9c; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:500; transition:0.2s;">保存设置</button>
                 </div>
                 
+                <!-- ========== 群主操作（仅群主可见） ========== -->
                 <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
-                    <div style="font-weight: bold; margin-bottom: 12px;">群主操作</div>
-                    <button id="dismissGroupBtn" style="width:100%; padding:10px; margin-bottom:8px; background:#e74c3c; color:white; border:none; border-radius:8px; cursor:pointer;">解散群聊</button>
-                    <button id="transferGroupBtn" style="width:100%; padding:10px; background:#f39c12; color:white; border:none; border-radius:8px; cursor:pointer;">转让群主</button>
+                    <div style="font-weight: bold; margin-bottom: 12px; color: #e74c3c;">群主操作</div>
+                    <button id="dismissGroupBtn" style="width:100%; padding:10px; margin-bottom:8px; background:#e74c3c; color:white; border:none; border-radius:10px; cursor:pointer; transition:0.2s;">解散群聊</button>
+                    <button id="transferGroupBtn" style="width:100%; padding:10px; background:#f39c12; color:white; border:none; border-radius:10px; cursor:pointer; transition:0.2s;">转让群主</button>
                 </div>
                 ` : (isAdmin ? `
-                <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
-                    <div style="font-weight: bold; margin-bottom: 12px;">管理员提示</div>
-                    <div style="font-size: 13px; color: var(--text-secondary);">作为管理员，您可以移除普通成员和禁言成员</div>
+                <!-- ========== 管理员提示 ========== -->
+                <div style="margin-bottom: 20px; padding: 12px; background: rgba(52,152,219,0.1); border-radius: 10px; border-left: 3px solid #3498db;">
+                    <div style="font-weight: bold; margin-bottom: 6px; color: #3498db;">管理员权限</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">作为管理员，您可以移除普通成员和禁言成员</div>
                 </div>
                 ` : '')}
                 
+                <!-- ========== 成员列表 ========== -->
                 <div>
-                    <div style="font-weight: bold; margin-bottom: 12px;">成员列表 (${latestGroup.members.length}人)</div>
+                    <div style="font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span>成员列表 (${latestGroup.members.length}人)</span>
+                    </div>
                     <div id="memberList">
                         ${latestGroup.members.map(m => {
                             const isMemberOwner = m === latestGroup.owner;
@@ -3635,17 +4327,17 @@ function showGroupManageModal(group) {
                             const isMuted = latestGroup.settings?.mutedMembers?.includes(m);
                             const canManage = isOwner || (isAdmin && !isMemberOwner);
                             return `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border-color);">
                                 <div>
-                                    <span>${escapeHtml(m)}</span>
-                                    ${isMemberOwner ? '<span style="margin-left:8px;font-size:10px;color:#e74c3c;">群主</span>' : (isMemberAdmin ? '<span style="margin-left:8px;font-size:10px;color:#3498db;">管理员</span>' : '')}
-                                    ${isMuted ? '<span style="margin-left:8px;font-size:10px;color:#e67e22;">禁言中</span>' : ''}
+                                    <span style="font-weight: 500;">${escapeHtml(m)}</span>
+                                    ${isMemberOwner ? '<span style="margin-left:8px;font-size:10px;background:#e74c3c;color:white;padding:2px 6px;border-radius:10px;">群主</span>' : (isMemberAdmin ? '<span style="margin-left:8px;font-size:10px;background:#3498db;color:white;padding:2px 6px;border-radius:10px;">管理员</span>' : '')}
+                                    ${isMuted ? '<span style="margin-left:8px;font-size:10px;background:#e67e22;color:white;padding:2px 6px;border-radius:10px;">禁言中</span>' : ''}
                                 </div>
-                                <div>
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                                     ${canManage && m !== currentUser.username && !isMemberOwner ? `
-                                        <button class="remove-member-btn" data-member="${m}" style="background:#e74c3c; border:none; border-radius:4px; padding:4px 8px; color:white; font-size:11px; cursor:pointer; margin-right:4px;">移除</button>
-                                        ${!isMemberAdmin ? `<button class="set-admin-btn" data-member="${m}" style="background:#3498db; border:none; border-radius:4px; padding:4px 8px; color:white; font-size:11px; cursor:pointer; margin-right:4px;">设管理</button>` : `<button class="remove-admin-btn" data-member="${m}" style="background:#e67e22; border:none; border-radius:4px; padding:4px 8px; color:white; font-size:11px; cursor:pointer; margin-right:4px;">取消管理</button>`}
-                                        <button class="mute-member-btn" data-member="${m}" style="background:#e67e22; border:none; border-radius:4px; padding:4px 8px; color:white; font-size:11px; cursor:pointer;">${isMuted ? '取消禁言' : '禁言'}</button>
+                                        <button class="remove-member-btn" data-member="${m}" style="background:#e74c3c; border:none; border-radius:6px; padding:5px 10px; color:white; font-size:11px; cursor:pointer;">移除</button>
+                                        ${!isMemberAdmin ? `<button class="set-admin-btn" data-member="${m}" style="background:#3498db; border:none; border-radius:6px; padding:5px 10px; color:white; font-size:11px; cursor:pointer;">设管理</button>` : `<button class="remove-admin-btn" data-member="${m}" style="background:#e67e22; border:none; border-radius:6px; padding:5px 10px; color:white; font-size:11px; cursor:pointer;">取消管理</button>`}
+                                        <button class="mute-member-btn" data-member="${m}" style="background:#e67e22; border:none; border-radius:6px; padding:5px 10px; color:white; font-size:11px; cursor:pointer;">${isMuted ? '取消禁言' : '禁言'}</button>
                                     ` : ''}
                                 </div>
                             </div>`;
@@ -3653,14 +4345,21 @@ function showGroupManageModal(group) {
                     </div>
                 </div>
             </div>
-            <button class="close" id="closeModal" style="margin-top:16px; width:100%; padding:10px; background:#95a5a6; color:white; border:none; border-radius:8px; cursor:pointer;">关闭</button>
+            <button class="close" id="closeModal" style="margin-top:20px; width:100%; padding:12px; background:#95a5a6; color:white; border:none; border-radius:10px; cursor:pointer; transition:0.2s;">关闭</button>
         </div>
     `;
     document.body.appendChild(modal);
     
-    // 保存群设置
+    // ========== 保存群设置（仅群主） ==========
     if (isOwner) {
         document.getElementById('saveSettingsBtn')?.addEventListener('click', async () => {
+            // 保存公告
+            const newAnnouncement = document.getElementById('groupAnnouncement').value;
+            if (newAnnouncement !== currentAnnouncement) {
+                await updateGroupAnnouncement(latestGroup.groupId, newAnnouncement);
+            }
+            
+            // 保存设置
             const newSettings = {
                 inviteConfirm: document.getElementById('inviteConfirm').checked,
                 memberInvite: document.getElementById('memberInvite').checked,
@@ -3677,7 +4376,7 @@ function showGroupManageModal(group) {
         
         // 解散群聊
         document.getElementById('dismissGroupBtn')?.addEventListener('click', async () => {
-            if (confirm(`确定要解散群聊 "${latestGroup.groupName}" 吗？`)) {
+            if (confirm(`确定要解散群聊 "${latestGroup.groupName}" 吗？\n所有成员将被移除，聊天记录将被删除！`)) {
                 await dismissGroup(latestGroup.groupId);
                 modal.remove();
                 location.reload();
@@ -3695,8 +4394,26 @@ function showGroupManageModal(group) {
             }
         });
     }
-    
-    // 移除成员
+    // 更新群公告
+async function updateGroupAnnouncement(groupId, announcement) {
+    const groups = await readGitHubFile('groups.json') || [];
+    const idx = groups.findIndex(g => g.id === groupId);
+    if (idx !== -1) {
+        groups[idx].announcement = announcement;
+        await writeGitHubFile('groups.json', groups, `更新群公告: ${groupId}`);
+    }
+}
+
+// 更新群设置
+async function updateGroupSettings(groupId, settings) {
+    const groups = await readGitHubFile('groups.json') || [];
+    const idx = groups.findIndex(g => g.id === groupId);
+    if (idx !== -1) {
+        groups[idx].settings = settings;
+        await writeGitHubFile('groups.json', groups, `更新群设置: ${groupId}`);
+    }
+}
+    // ========== 移除成员 ==========
     document.querySelectorAll('.remove-member-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const member = btn.dataset.member;
@@ -3708,7 +4425,7 @@ function showGroupManageModal(group) {
         });
     });
     
-    // 设置管理员
+    // ========== 设置管理员 ==========
     document.querySelectorAll('.set-admin-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const member = btn.dataset.member;
@@ -3718,7 +4435,7 @@ function showGroupManageModal(group) {
         });
     });
     
-    // 取消管理员
+    // ========== 取消管理员 ==========
     document.querySelectorAll('.remove-admin-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const member = btn.dataset.member;
@@ -3728,7 +4445,7 @@ function showGroupManageModal(group) {
         });
     });
     
-    // 禁言/取消禁言
+    // ========== 禁言/取消禁言 ==========
     document.querySelectorAll('.mute-member-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const member = btn.dataset.member;
@@ -3738,6 +4455,7 @@ function showGroupManageModal(group) {
         });
     });
     
+    // 关闭弹窗
     document.getElementById('closeModal').onclick = () => modal.remove();
 }// 更新群设置
 async function updateGroupSettings(groupId, settings) {
@@ -4462,6 +5180,8 @@ document.querySelectorAll('.chat-group-btn').forEach(b => {
 setTimeout(() => {
         checkAndShowChangelog();
     }, 500);
+initMentionFeature();
+initVoiceRecording();
 }
             async function handleSubmit() {
                 const username = document.getElementById('loginUsername').value.trim();
