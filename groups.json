@@ -42,7 +42,9 @@
       "allMute": false,
       "joinVerify": "admin",
       "anonymousChat": false,
-      "mutedMembers": []
+      "mutedMembers": [
+        "test2"
+      ]
     }
   }
 ]
