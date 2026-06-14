@@ -3313,7 +3313,8 @@ function rebindMessageEvents() {
     }, true);
 
     bindLongPressEvents();
-}            function bindLongPressEvents() {
+}            
+function bindLongPressEvents() {
                 const container = document.getElementById('messagesContainer');
                 container.addEventListener('touchstart', function(e) {
                     const messageRow = e.target.closest('.message-row');
