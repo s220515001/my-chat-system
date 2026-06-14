@@ -43,6 +43,7 @@
       "joinVerify": "admin",
       "anonymousChat": false,
       "mutedMembers": []
-    }
+    },
+    "announcement": "所有人死亡！"
   }
 ]
