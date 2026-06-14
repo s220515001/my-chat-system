@@ -3096,9 +3096,15 @@ function tryResumeAudio() {
         // ========== 语音消息 ==========
 if (m.type === 'voice') {
     const duration = m.duration || 3;
-    // 使用 data-voice 属性存储数据，避免内联 onclick
+    let voiceData = m.content || '';
+    
+    // 转义特殊字符，避免 HTML 属性问题
+    const escapedVoiceData = voiceData.replace(/&/g, '&amp;')
+                                       .replace(/"/g, '&quot;')
+                                       .replace(/'/g, '&#39;');
+    
     const voiceHtml = `
-        <div class="voice-message" data-voice-data="${m.content}" data-voice-duration="${duration}">
+        <div class="voice-message" data-voice-data="${escapedVoiceData}" data-voice-duration="${duration}">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="2" width="6" height="12" rx="3"/>
                 <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
@@ -3253,11 +3259,42 @@ function escapeRegex(str) {
                     });
                 });
             }
+
+function bindContextMenuEvents() {
+    const container = document.getElementById('messagesContainer');
+    if (!container) return;
+    
+    // 清除旧的监听器，避免重复绑定
+    container.removeEventListener('contextmenu', handleContextMenu);
+    container.addEventListener('contextmenu', handleContextMenu);
+}
+
+function handleContextMenu(e) {
+    const messageRow = e.target.closest('.message-row');
+    if (!messageRow) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    let msgData = null;
+    try {
+        const rawData = messageRow.dataset.messageData;
+        if (rawData) msgData = JSON.parse(decodeURIComponent(rawData));
+    } catch (ex) {
+        console.error('解析消息数据失败', ex);
+        return;
+    }
+    
+    if (!msgData) return;
+    
+    // 显示右键菜单
+    showContextMenu(e, msgData);
+}
 function rebindMessageEvents() {
     const container = document.getElementById('messagesContainer');
     if (!container) return;
 
-    // 右键菜单
+    // 绑定右键菜单
     bindContextMenuEvents();
 
     // 图片预览和引用跳转、语音播放
@@ -3288,20 +3325,18 @@ function rebindMessageEvents() {
         if (voiceMsg) {
             e.stopPropagation();
             const base64Data = voiceMsg.dataset.voiceData;
-            const duration = voiceMsg.dataset.voiceDuration;
-            if (base64Data) {
-                try {
-                    const audio = new Audio(base64Data);
-                    audio.play();
-                    showToast(`播放语音 ${duration}秒`);
-                } catch(err) {
-                    console.error('播放失败', err);
-                    showToast('语音播放失败');
-                }
+            const duration = voiceMsg.dataset.voiceDuration || 3;
+            if (base64Data && base64Data !== 'undefined') {
+                // 使用修复后的播放函数
+                window.playVoiceMessage(base64Data, duration);
+            } else {
+                console.error('语音数据无效:', base64Data);
+                showToast('语音数据无效');
             }
         }
     });
 
+    // Tooltip 相关
     container.addEventListener('mouseenter', function(e) {
         const icon = e.target.closest('.msg-status-icon');
         if (icon) showStatusTooltip(e, icon.dataset.status);
@@ -3312,8 +3347,9 @@ function rebindMessageEvents() {
         if (icon) hideStatusTooltip();
     }, true);
 
+    // 长按事件
     bindLongPressEvents();
-}            
+}      
 function bindLongPressEvents() {
                 const container = document.getElementById('messagesContainer');
                 container.addEventListener('touchstart', function(e) {
@@ -3886,37 +3922,61 @@ async function sendVoiceMessage(chatId, chatType, audioBlob) {
 
 // 播放语音
 function playVoiceMessage(base64Data, duration) {
+    if (!base64Data) {
+        showToast('语音数据为空');
+        return;
+    }
+    
     // 确保 dataURL 格式正确
     let audioSrc = base64Data;
     
-    // 如果不是以 data:audio 开头，尝试添加 MIME 头
+    console.log('原始语音数据开头:', audioSrc.substring(0, 100));
+    
+    // 如果不是以 data:audio 开头，尝试修复
     if (!base64Data.startsWith('data:audio')) {
-        // 检测是否是纯 base64
-        if (base64Data.match(/^[A-Za-z0-9+/=]+$/)) {
+        // 检查是否是纯 base64（不包含逗号）
+        if (!base64Data.includes(',')) {
+            // 纯 base64，添加完整头
             audioSrc = 'data:audio/webm;base64,' + base64Data;
-        } else if (base64Data.startsWith('data:application/octet-stream')) {
+            console.log('修复为纯base64格式');
+        } 
+        // 检查是否是 data:application 格式
+        else if (base64Data.startsWith('data:application/octet-stream')) {
             audioSrc = base64Data.replace('data:application/octet-stream', 'data:audio/webm');
+            console.log('修复application格式');
+        }
+        // 检查是否是 data: 但 MIME 类型不对
+        else if (base64Data.startsWith('data:')) {
+            audioSrc = base64Data.replace(/^data:[^,]+,/, 'data:audio/webm;base64,');
+            console.log('修复通用data格式');
         }
     }
     
-    const audio = new Audio(audioSrc);
+    console.log('修复后开头:', audioSrc.substring(0, 100));
+    
+    const audio = new Audio();
     
     // 添加错误处理
     audio.onerror = (e) => {
         console.error('音频加载错误:', e);
-        console.log('音频数据前100字符:', audioSrc.substring(0, 100));
-        showToast('语音加载失败，格式可能不支持');
+        console.log('音频错误代码:', audio.error ? audio.error.code : 'unknown');
+        console.log('音频错误信息:', audio.error ? audio.error.message : 'no error');
+        showToast('语音格式不支持或已损坏');
     };
     
+    audio.oncanplay = () => {
+        console.log('音频可以播放');
+    };
+    
+    audio.src = audioSrc;
+    
     audio.play().catch(e => {
-        console.error('播放失败:', e);
-        showToast('语音播放失败');
+        console.error('播放失败详情:', e);
+        showToast('语音播放失败: ' + (e.message || '未知错误'));
     });
     
     showToast(`播放语音 ${duration}秒`);
-}
-
-// 初始化录音功能
+}// 初始化录音功能
 function initVoiceRecording() {
     const voiceBtn = document.getElementById('voiceBtn');
     if (!voiceBtn) return;
