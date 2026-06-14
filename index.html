@@ -1688,7 +1688,21 @@
     </style>
 </head>
 <body>
-    <div class="app-container" id="app" style="display: none;">
+    
+
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box" id="loginBox">
+            <h3 id="formTitle">GitChat 登录</h3>
+            <input type="text" id="loginUsername" placeholder="用户名" autocomplete="off">
+            <input type="password" id="loginPassword" placeholder="密码">
+            <div id="formMessage" class="error"></div>
+            <button id="submitBtn">登录</button>
+            <div class="register-link">
+                <a id="toggleFormBtn">没有账号？去注册</a>
+            </div>
+        </div>
+    </div>
+	<div class="app-container" id="app" style="display: none;">
         <!-- 侧边栏（普通用户） -->
         <div class="sidebar" id="sidebar">
             <div class="user-profile">
@@ -1777,20 +1791,6 @@
             <div class="admin-content" id="adminContent"></div>
         </div>
     </div>
-
-    <div class="login-overlay" id="loginOverlay">
-        <div class="login-box" id="loginBox">
-            <h3 id="formTitle">GitChat 登录</h3>
-            <input type="text" id="loginUsername" placeholder="用户名" autocomplete="off">
-            <input type="password" id="loginPassword" placeholder="密码">
-            <div id="formMessage" class="error"></div>
-            <button id="submitBtn">登录</button>
-            <div class="register-link">
-                <a id="toggleFormBtn">没有账号？去注册</a>
-            </div>
-        </div>
-    </div>
-
     <script>
 let userAvatarsCache = {};
 // ========== 全局函数（IIFE 外部，供 onclick 调用） ==========
@@ -5324,25 +5324,32 @@ initVoiceRecording();
 (async function initApp() {
     const saved = localStorage.getItem('chatUser');
     if (saved) {
-        currentUser = JSON.parse(saved);
-        document.getElementById('loginOverlay').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        initTheme();
-        if (currentUser.isAdmin) {
-            document.getElementById('sidebar').style.display = 'none';
-            document.getElementById('chatArea').style.display = 'none';
-            initAdminPanel();
-        } else {
-            document.getElementById('adminPanel').style.display = 'none';
-            await initAfterLogin();
+        try {
+            currentUser = JSON.parse(saved);
+            // 验证用户是否真实存在（可选）
+            const users = await readGitHubFile('users.json');
+            if (currentUser.isAdmin || (users && users[currentUser.username])) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                initTheme();
+                if (currentUser.isAdmin) {
+                    initAdminPanel();
+                } else {
+                    await initAfterLogin();
+                }
+                return;
+            } else {
+                // 无效的用户信息，清除
+                localStorage.removeItem('chatUser');
+            }
+        } catch(e) {
+            localStorage.removeItem('chatUser');
         }
-    } else {
-        document.getElementById('loginOverlay').style.display = 'flex';
     }
+    // 确保登录界面显示
+    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
 })();
-            window.addEventListener('beforeunload', () => { saveUnread();
-                saveLastSeen(); });
-        })();
     </script>
 </body>
 </html>
