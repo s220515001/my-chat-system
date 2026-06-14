@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>更新日志 - GitChat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #6c757d;
+            --border-color: #e9ecef;
+            --primary-color: #1abc9c;
+            --primary-hover: #16a085;
+            --version-bg: #e8f4f8;
+            --version-color: #1abc9c;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-color: #2a2a4a;
+            --primary-color: #16a085;
+            --version-bg: #1e2a3a;
+            --version-color: #16a085;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* 头部 */
+        .header {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* 版本卡片 */
+        .version-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .version-header {
+            padding: 16px 20px;
+            background: var(--version-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .version-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--version-color);
+        }
+
+        .version-date {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .version-tag {
+            background: var(--primary-color);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .version-tag.new {
+            background: #e74c3c;
+        }
+
+        .version-content {
+            padding: 16px 20px;
+        }
+
+        .update-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .update-list li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .update-list li:last-child {
+            border-bottom: none;
+        }
+
+        .update-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .update-list li.feature::before {
+            content: "✨";
+        }
+
+        .update-list li.fix::before {
+            content: "🔧";
+        }
+
+        .update-list li.optimize::before {
+            content: "⚡";
+        }
+
+        /* 回到顶部 */
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            z-index: 100;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-2px);
+            background: var(--primary-hover);
+        }
+
+        /* 响应式 */
+        @media (max-width: 640px) {
+            body {
+                padding: 12px;
+            }
+            .version-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 更新日志</h1>
+            <div class="subtitle">记录 GitChat 的每一次成长</div>
+        </div>
+
+        <!-- 版本 v1.1.0 -->
+        <div class="version-card" id="version-1.1.0">
+            <div class="version-header">
+                <div>
+                    <span class="version-number">v1.1.0</span>
+                    <span class="version-tag new">最新</span>
+                </div>
+                <span class="version-date">2024-06-14</span>
+            </div>
+            <div class="version-content">
+                <ul class="update-list">
+                    <li class="feature">新增个人设置页面，支持修改昵称、个性签名、生日、性别</li>
+                    <li class="feature">新增头像上传功能，头像存储到仓库 avatars 文件夹</li>
+                    <li class="feature">新增个人主页，点击用户名/头像可查看他人资料</li>
+                    <li class="feature">管理员可编辑任意用户的完整资料（昵称、签名、生日、性别、头像）</li>
+                    <li class="feature">点击侧边栏自己的头像/昵称可直接进入设置页面</li>
+                    <li class="feature">群聊消息中显示发送者头像，点击可查看个人主页</li>
+                    <li class="optimize">优化深色/浅色模式切换体验</li>
+                    <li class="optimize">优化移动端适配</li>
+                    <li class="fix">修复消息送达状态显示问题</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 版本 v1.0.0 -->
+        <div class="version-card" id="version-1.0.0">
+            <div class="version-header">
+                <div>
+                    <span class="version-number">v1.0.0</span>
+                </div>
+                <span class="version-date">2024-06-01</span>
+            </div>
+            <div class="version-content">
+                <ul class="update-list">
+                    <li class="feature">首次发布 GitChat 私密聊天室</li>
+                    <li class="feature">支持用户注册/登录</li>
+                    <li class="feature">支持添加好友、创建群聊</li>
+                    <li class="feature">支持发送文字和图片消息</li>
+                    <li class="feature">支持消息引用、撤回、删除</li>
+                    <li class="feature">支持深色/浅色主题切换</li>
+                    <li class="feature">管理员后台管理用户和群聊</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+
+    <script>
+        // 主题同步
+        function syncTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+        syncTheme();
+
+        // 回到顶部
+        document.getElementById('backToTop').addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // 监听主题变化
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'theme') {
+                syncTheme();
+            }
+        });
+    </script>
+</body>
+</html>
