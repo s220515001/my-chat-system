@@ -3886,8 +3886,33 @@ async function sendVoiceMessage(chatId, chatType, audioBlob) {
 
 // 播放语音
 function playVoiceMessage(base64Data, duration) {
-    const audio = new Audio(base64Data);
-    audio.play();
+    // 确保 dataURL 格式正确
+    let audioSrc = base64Data;
+    
+    // 如果不是以 data:audio 开头，尝试添加 MIME 头
+    if (!base64Data.startsWith('data:audio')) {
+        // 检测是否是纯 base64
+        if (base64Data.match(/^[A-Za-z0-9+/=]+$/)) {
+            audioSrc = 'data:audio/webm;base64,' + base64Data;
+        } else if (base64Data.startsWith('data:application/octet-stream')) {
+            audioSrc = base64Data.replace('data:application/octet-stream', 'data:audio/webm');
+        }
+    }
+    
+    const audio = new Audio(audioSrc);
+    
+    // 添加错误处理
+    audio.onerror = (e) => {
+        console.error('音频加载错误:', e);
+        console.log('音频数据前100字符:', audioSrc.substring(0, 100));
+        showToast('语音加载失败，格式可能不支持');
+    };
+    
+    audio.play().catch(e => {
+        console.error('播放失败:', e);
+        showToast('语音播放失败');
+    });
+    
     showToast(`播放语音 ${duration}秒`);
 }
 
