@@ -2029,10 +2029,19 @@ function tryResumeAudio() {
                     id: `group_${g.id}`,
                     groupId: g.id,
                     groupName: g.groupName,
-                    avatar: g.avatar || null,  // 群头像路径（可选）
+                    avatar: g.avatar || null,
                     type: 'group',
                     members: g.members,
-                    owner: g.owner || g.members[0]
+                    owner: g.owner || g.members[0],
+                    admins: g.admins || [],
+                    settings: g.settings || {
+                        inviteConfirm: true,
+                        memberInvite: true,
+                        joinVerify: 'admin',
+                        anonymousChat: false,
+                        allMute: false,
+                        mutedMembers: []
+                    }
                 });
             }
         }
@@ -2133,65 +2142,100 @@ function tryResumeAudio() {
 
             // ========== 消息发送（修改：支持送达状态和引用） ==========
             async function sendMessageToChat(chatId, chatType, content, type = 'text', extra = {}) {
-                const clientMsgId = generateUUID();
-                const msg = {
-                    id: Date.now(),
-                    from: currentUser.username,
-                    fromNickname: currentUser.nickname,
-                    targetId: chatId,
-                    targetType: chatType,
-                    type,
-                    content,
-                    timestamp: Date.now(),
-                    status: 'pending',
-                    clientMsgId: clientMsgId,
-                    ...extra
-                };
-                // 如果有引用，添加quote字段
-                if (currentQuote && currentQuote.targetId === chatId) {
-                    msg.quote = { ...currentQuote };
-                }
-                // 添加到pending
-                pendingMessages.set(clientMsgId, {
-                    status: 'pending',
-                    targetId: chatId,
-                    timestamp: Date.now(),
-                    retryCount: 0,
-                    msgData: msg
-                });
-                try {
-                    const ok = await addMessage(msg);
-                    if (ok) {
-                        pendingMessages.get(clientMsgId).status = 'stored';
-                        msg.status = 'stored';
-                        if (activeChat.id === chatId) {
-                            const msgs = await getMessagesForChat(chatId);
-                            renderMessages(msgs);
-                        }
-                        // 清除引用
-                        if (currentQuote && currentQuote.targetId === chatId) {
-                            clearQuote();
-                        }
-                        return { ok: true, clientMsgId };
-                    } else {
-                        pendingMessages.get(clientMsgId).status = 'failed';
-                        msg.status = 'failed';
-                        if (activeChat.id === chatId) {
-                            const msgs = await getMessagesForChat(chatId);
-                            renderMessages(msgs);
-                        }
-                        return { ok: false, clientMsgId };
-                    }
-                } catch (e) {
-                    pendingMessages.get(clientMsgId).status = 'failed';
-                    msg.status = 'failed';
-                    if (activeChat.id === chatId) {
-                        const msgs = await getMessagesForChat(chatId);
-                        renderMessages(msgs);
-                    }
-                    return { ok: false, clientMsgId };
-                }
+    // ========== 群聊权限检查 ==========
+    if (chatType === 'group') {
+        // 获取群聊信息
+        const group = groupsData.find(g => g.id === chatId);
+        if (group) {
+            const isOwner = group.owner === currentUser.username;
+            const isAdmin = group.admins && group.admins.includes(currentUser.username);
+            const isMuted = group.settings && group.settings.mutedMembers && group.settings.mutedMembers.includes(currentUser.username);
+            const allMute = group.settings && group.settings.allMute === true;
+            
+            // 全员禁言检查（群主和管理员可发言）
+            if (allMute && !isOwner && !isAdmin) {
+                showToast('全员禁言中，只有管理员可以发言');
+                return { ok: false, error: 'all_muted' };
             }
+            
+            // 个人禁言检查（群主和管理员不受影响）
+            if (isMuted && !isOwner && !isAdmin) {
+                showToast('您已被禁言，无法发送消息');
+                return { ok: false, error: 'user_muted' };
+            }
+        }
+    }
+    
+    // ========== 原有发送逻辑 ==========
+    const clientMsgId = generateUUID();
+    const msg = {
+        id: Date.now(),
+        from: currentUser.username,
+        fromNickname: currentUser.nickname,
+        targetId: chatId,
+        targetType: chatType,
+        type,
+        content,
+        timestamp: Date.now(),
+        status: 'pending',
+        clientMsgId: clientMsgId,
+        ...extra
+    };
+    
+    // 如果有引用，添加quote字段
+    if (currentQuote && currentQuote.targetId === chatId) {
+        msg.quote = { ...currentQuote };
+    }
+    
+    // 添加到pending
+    pendingMessages.set(clientMsgId, {
+        status: 'pending',
+        targetId: chatId,
+        timestamp: Date.now(),
+        retryCount: 0,
+        msgData: msg
+    });
+    
+    // 立即渲染显示"发送中"
+    if (activeChat.id === chatId) {
+        const msgs = await getMessagesForChat(chatId);
+        renderMessages(msgs);
+    }
+    
+    try {
+        const ok = await addMessage(msg);
+        if (ok) {
+            pendingMessages.get(clientMsgId).status = 'stored';
+            msg.status = 'stored';
+            if (activeChat.id === chatId) {
+                const msgs = await getMessagesForChat(chatId);
+                renderMessages(msgs);
+            }
+            // 清除引用
+            if (currentQuote && currentQuote.targetId === chatId) {
+                clearQuote();
+            }
+            return { ok: true, clientMsgId };
+        } else {
+            pendingMessages.get(clientMsgId).status = 'failed';
+            msg.status = 'failed';
+            if (activeChat.id === chatId) {
+                const msgs = await getMessagesForChat(chatId);
+                renderMessages(msgs);
+            }
+            return { ok: false, clientMsgId, error: 'save_failed' };
+        }
+    } catch (e) {
+        console.error('发送消息失败', e);
+        pendingMessages.get(clientMsgId).status = 'failed';
+        msg.status = 'failed';
+        if (activeChat.id === chatId) {
+            const msgs = await getMessagesForChat(chatId);
+            renderMessages(msgs);
+        }
+        return { ok: false, clientMsgId, error: 'network_error' };
+    }
+}
 
             async function handleImageSend(file) {
                 if (!activeChat.id) {
@@ -3095,6 +3139,17 @@ function rebindMessageEvents() {
         }
     }
     
+    // 判断当前用户是否是群主或管理员（用于显示群管理按钮）
+    let isGroupOwner = false;
+    let isGroupAdmin = false;
+    if (type === 'group') {
+        const group = groupsData.find(g => g.id === chatId);
+        if (group) {
+            isGroupOwner = group.owner === currentUser.username;
+            isGroupAdmin = group.admins?.includes(currentUser.username);
+        }
+    }
+    
     // 更新聊天头部HTML
     const chatHeader = document.getElementById('chatHeader');
     const headerContent = `
@@ -3104,13 +3159,38 @@ function rebindMessageEvents() {
                 <div>
                     <div class="chat-contact-name">${escapeHtml(name)}</div>
                     <div class="chat-contact-type">${type === 'friend' ? '私密好友' : '群聊'}</div>
+                    ${isGroupOwner ? '<div style="font-size:10px;color:#e74c3c;margin-top:2px;">群主</div>' : (isGroupAdmin ? '<div style="font-size:10px;color:#3498db;margin-top:2px;">管理员</div>' : '')}
                 </div>
             </div>
         </div>
-        <button class="add-member-header-btn" id="addMemberBtn" style="display: ${type === 'group' ? 'block' : 'none'};">添加成员</button>
-        <button class="back-to-admin-btn" id="backToAdminBtn" style="display: none;">返回管理</button>
+        <div style="display:flex;gap:8px;">
+            ${type === 'group' ? `
+            <button class="group-manage-btn" id="groupManageBtn" style="background:#6c5ce7; border:none; border-radius:8px; padding:6px 12px; color:white; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.07.08A10 10 0 0 0 12 17.66a10 10 0 0 0 6.33-2.58l.07-.08z"/>
+                    <path d="M12 3v4"/>
+                    <path d="M3 6l2-2 2 2"/>
+                    <path d="M21 6l-2-2-2 2"/>
+                </svg>
+                群管理
+            </button>
+            ` : ''}
+            <button class="add-member-header-btn" id="addMemberBtn" style="display: ${type === 'group' ? 'block' : 'none'};">添加成员</button>
+            <button class="back-to-admin-btn" id="backToAdminBtn" style="display: none;">返回管理</button>
+        </div>
     `;
     chatHeader.innerHTML = headerContent;
+    
+    // 绑定群管理按钮事件
+    if (type === 'group') {
+        const group = groupsData.find(g => g.id === chatId);
+        document.getElementById('groupManageBtn')?.addEventListener('click', () => {
+            if (group) {
+                showGroupManageModal(group);
+            }
+        });
+    }
     
     // 重新绑定按钮事件
     if (type === 'group') {
@@ -3285,26 +3365,285 @@ function rebindMessageEvents() {
             }
 
             function showAddMemberModal(groupId) {
-                const opts = friendsData.map(f => `<option value="${f.username}">${f.nickname}</option>`).join('');
-                const modal = document.createElement('div');
-                modal.className = 'modal';
-                modal.innerHTML = `
-                    <div class="modal-content">
-                        <h4>添加成员</h4>
-                        <select id="memberSelect"><option value="">选择好友</option>${opts}</select>
-                        <button id="confirmAddMember">添加</button>
-                        <button class="close" id="closeModal">取消</button>
-                    </div>`;
-                document.body.appendChild(modal);
-                document.getElementById('confirmAddMember').onclick = async () => {
-                    const member = document.getElementById('memberSelect').value;
-                    if (member) { await addMemberToGroup(groupId, member);
-                        location.reload(); } else alert('请选择好友');
-                    modal.remove();
-                };
-                document.getElementById('closeModal').onclick = () => modal.remove();
-            }
+    const group = groupsData.find(g => g.groupId === groupId);
+    if (!group) return;
+    
+    const isOwner = group.owner === currentUser.username;
+    const isAdmin = group.admins?.includes(currentUser.username);
+    const canInvite = isOwner || isAdmin || group.settings?.memberInvite === true;
+    
+    if (!canInvite) {
+        showToast('您没有权限邀请成员进群');
+        return;
+    }
+    
+    // 获取不是群成员的好友
+    const availableFriends = friendsData.filter(f => !group.members.includes(f.username));
+    
+    if (availableFriends.length === 0) {
+        showToast('没有可邀请的好友');
+        return;
+    }
+    
+    const opts = availableFriends.map(f => `<option value="${f.username}">${f.nickname}</option>`).join('');
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h4>添加成员</h4>
+            ${group.settings?.inviteConfirm && !isOwner && !isAdmin ? '<p style="font-size:12px;color:#e74c3c;margin-bottom:8px;">⚠️ 邀请需要群主或管理员确认</p>' : ''}
+            <select id="memberSelect"><option value="">选择好友</option>${opts}</select>
+            <button id="confirmAddMember">${group.settings?.inviteConfirm && !isOwner && !isAdmin ? '发送邀请' : '添加'}</button>
+            <button class="close" id="closeModal">取消</button>
+        </div>`;
+    document.body.appendChild(modal);
+    
+    document.getElementById('confirmAddMember').onclick = async () => {
+        const member = document.getElementById('memberSelect').value;
+        if (!member) {
+            alert('请选择好友');
+            return;
+        }
+        
+        if (group.settings?.inviteConfirm && !isOwner && !isAdmin) {
+            // 需要审批，发送邀请请求
+            await sendInviteRequest(groupId, member, currentUser.username);
+            showToast('邀请已发送，等待管理员审批');
+        } else {
+            // 直接添加
+            await addMemberToGroup(groupId, member);
+            showToast('添加成功');
+            location.reload();
+        }
+        modal.remove();
+    };
+    
+    document.getElementById('closeModal').onclick = () => modal.remove();
+}
 
+// 发送邀请请求
+async function sendInviteRequest(groupId, targetUser, inviter) {
+    const requests = await readGitHubFile('invite_requests.json') || [];
+    requests.push({
+        id: Date.now(),
+        groupId: groupId,
+        targetUser: targetUser,
+        inviter: inviter,
+        status: 'pending',
+        timestamp: Date.now()
+    });
+    await writeGitHubFile('invite_requests.json', requests, `邀请请求: ${targetUser}`);
+}
+
+// 添加成员（直接添加）
+async function addMemberToGroup(groupId, member) {
+    const groups = await readGitHubFile('groups.json') || [];
+    const idx = groups.findIndex(g => g.id === groupId);
+    if (idx === -1) { 
+        alert('群不存在');
+        return false;
+    }
+    if (groups[idx].members.includes(member)) { 
+        alert('已在群中');
+        return false;
+    }
+    groups[idx].members.push(member);
+    await writeGitHubFile('groups.json', groups, `添加成员 ${member} 到群`);
+    return true;
+}
+// 群管理弹窗（完整版）
+function showGroupManageModal(group) {
+    const isOwner = group.owner === currentUser.username;
+    const isAdmin = group.admins?.includes(currentUser.username);
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content" style="width: 450px; max-width: 90vw;">
+            <h4>群管理 - ${group.groupName}</h4>
+            <div style="max-height: 500px; overflow-y: auto;">
+                ${isOwner ? `
+                <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+                    <div style="font-weight: bold; margin-bottom: 12px;">群聊设置</div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <span>🔐 邀请确认 (需管理员审批)</span>
+                            <input type="checkbox" id="inviteConfirm" ${group.settings?.inviteConfirm ? 'checked' : ''}>
+                        </label>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">开启后，成员邀请需要管理员确认</div>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <span>👥 允许普通成员邀请</span>
+                            <input type="checkbox" id="memberInvite" ${group.settings?.memberInvite ? 'checked' : ''}>
+                        </label>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">关闭后只有管理员可以邀请</div>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <span>🔇 全员禁言</span>
+                            <input type="checkbox" id="allMute" ${group.settings?.allMute ? 'checked' : ''}>
+                        </label>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">开启后仅管理员可发言</div>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <div style="margin-bottom: 8px;">👋 入群验证</div>
+                        <select id="joinVerify" style="width:100%; padding:8px; border-radius:8px;">
+                            <option value="admin" ${group.settings?.joinVerify === 'admin' ? 'selected' : ''}>需要管理员审核</option>
+                            <option value="anyone" ${group.settings?.joinVerify === 'anyone' ? 'selected' : ''}>无需审核直接加入</option>
+                            <option value="none" ${group.settings?.joinVerify === 'none' ? 'selected' : ''}>禁止任何人加入</option>
+                        </select>
+                    </div>
+                    <button id="saveSettingsBtn" style="width:100%; padding:8px; margin-top:8px; background:#1abc9c; color:white; border:none; border-radius:8px; cursor:pointer;">保存设置</button>
+                </div>
+                
+                <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+                    <div style="font-weight: bold; margin-bottom: 12px;">群主操作</div>
+                    <button id="dismissGroupBtn" style="width:100%; padding:10px; margin-bottom:8px; background:#e74c3c; color:white; border:none; border-radius:8px; cursor:pointer;">解散群聊</button>
+                    <button id="transferGroupBtn" style="width:100%; padding:10px; background:#f39c12; color:white; border:none; border-radius:8px; cursor:pointer;">转让群主</button>
+                </div>
+                ` : ''}
+                
+                <div>
+                    <div style="font-weight: bold; margin-bottom: 12px;">成员列表 (${group.members.length}人)</div>
+                    <div id="memberList">
+                        ${group.members.map(m => {
+                            const isMemberOwner = m === group.owner;
+                            const isMemberAdmin = group.admins?.includes(m);
+                            const isMuted = group.settings?.mutedMembers?.includes(m);
+                            const canManage = isOwner || (isAdmin && !isMemberOwner);
+                            return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                                <div>
+                                    <span>${escapeHtml(m)}</span>
+                                    ${isMemberOwner ? '<span style="margin-left:8px;font-size:10px;color:#e74c3c;">群主</span>' : (isMemberAdmin ? '<span style="margin-left:8px;font-size:10px;color:#3498db;">管理员</span>' : '')}
+                                    ${isMuted ? '<span style="margin-left:8px;font-size:10px;color:#e67e22;">禁言中</span>' : ''}
+                                </div>
+                                <div>
+                                    ${canManage && m !== currentUser.username && !isMemberOwner ? `
+                                        <button class="remove-member-btn" data-member="${m}" style="background:#e74c3c; border:none; border-radius:4px; padding:4px 8px; color:white; font-size:11px; cursor:pointer; margin-right:4px;">移除</button>
+                                        ${!isMemberAdmin ? `<button class="set-admin-btn" data-member="${m}" style="background:#3498db; border:none; border-radius:4px; padding:4px 8px; color:white; font-size:11px; cursor:pointer; margin-right:4px;">设管理</button>` : `<button class="remove-admin-btn" data-member="${m}" style="background:#e67e22; border:none; border-radius:4px; padding:4px 8px; color:white; font-size:11px; cursor:pointer; margin-right:4px;">取消管理</button>`}
+                                        <button class="mute-member-btn" data-member="${m}" style="background:#e67e22; border:none; border-radius:4px; padding:4px 8px; color:white; font-size:11px; cursor:pointer;">${isMuted ? '取消禁言' : '禁言'}</button>
+                                    ` : ''}
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+            <button class="close" id="closeModal" style="margin-top:16px; width:100%; padding:10px; background:#95a5a6; color:white; border:none; border-radius:8px; cursor:pointer;">关闭</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // 保存群设置
+    if (isOwner) {
+        document.getElementById('saveSettingsBtn')?.addEventListener('click', async () => {
+            const newSettings = {
+                inviteConfirm: document.getElementById('inviteConfirm').checked,
+                memberInvite: document.getElementById('memberInvite').checked,
+                allMute: document.getElementById('allMute').checked,
+                joinVerify: document.getElementById('joinVerify').value,
+                anonymousChat: group.settings?.anonymousChat || false,
+                mutedMembers: group.settings?.mutedMembers || []
+            };
+            await updateGroupSettings(group.groupId, newSettings);
+            showToast('设置已保存');
+            modal.remove();
+            location.reload();
+        });
+        
+        // 解散群聊
+        document.getElementById('dismissGroupBtn')?.addEventListener('click', async () => {
+            if (confirm(`确定要解散群聊 "${group.groupName}" 吗？`)) {
+                await dismissGroup(group.groupId);
+                modal.remove();
+                location.reload();
+            }
+        });
+        
+        // 转让群主
+        document.getElementById('transferGroupBtn')?.addEventListener('click', () => {
+            const newOwner = prompt('输入新群主用户名（必须是群成员）');
+            if (newOwner && group.members.includes(newOwner)) {
+                transferGroupOwner(group.groupId, newOwner);
+                modal.remove();
+            } else if (newOwner) {
+                alert('用户不在群聊中');
+            }
+        });
+    }
+    
+    // 移除成员
+    document.querySelectorAll('.remove-member-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const member = btn.dataset.member;
+            if (confirm(`确定移除 ${member} 吗？`)) {
+                await removeMemberFromGroup(group.groupId, member);
+                modal.remove();
+                location.reload();
+            }
+        });
+    });
+    
+    // 设置管理员
+    document.querySelectorAll('.set-admin-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const member = btn.dataset.member;
+            await setGroupAdmin(group.groupId, member, true);
+            modal.remove();
+            location.reload();
+        });
+    });
+    
+    // 取消管理员
+    document.querySelectorAll('.remove-admin-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const member = btn.dataset.member;
+            await setGroupAdmin(group.groupId, member, false);
+            modal.remove();
+            location.reload();
+        });
+    });
+    
+    // 禁言/取消禁言
+    document.querySelectorAll('.mute-member-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const member = btn.dataset.member;
+            await toggleMuteMember(group.groupId, member);
+            modal.remove();
+            location.reload();
+        });
+    });
+    
+    document.getElementById('closeModal').onclick = () => modal.remove();
+}
+
+// 更新群设置
+async function updateGroupSettings(groupId, settings) {
+    const groups = await readGitHubFile('groups.json') || [];
+    const idx = groups.findIndex(g => g.id === groupId);
+    if (idx !== -1) {
+        groups[idx].settings = settings;
+        await writeGitHubFile('groups.json', groups, `更新群设置: ${groupId}`);
+    }
+}
+
+// 禁言/取消禁言
+async function toggleMuteMember(groupId, member) {
+    const groups = await readGitHubFile('groups.json') || [];
+    const idx = groups.findIndex(g => g.id === groupId);
+    if (idx !== -1) {
+        if (!groups[idx].settings) groups[idx].settings = { mutedMembers: [] };
+        if (groups[idx].settings.mutedMembers.includes(member)) {
+            groups[idx].settings.mutedMembers = groups[idx].settings.mutedMembers.filter(m => m !== member);
+        } else {
+            groups[idx].settings.mutedMembers.push(member);
+        }
+        await writeGitHubFile('groups.json', groups, `禁言/取消禁言: ${member}`);
+    }
+}
             function logout() { localStorage.removeItem('chatUser');
                 location.reload(); }
 
