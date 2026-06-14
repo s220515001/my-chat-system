@@ -1586,13 +1586,23 @@
 
     <script>
 let userAvatarsCache = {};
+// ========== 全局函数（IIFE 外部，供 onclick 调用） ==========
+function viewUserProfile(username) {
+    if (!username) return;
+    window.location.href = `personalpage.html?user=${encodeURIComponent(username)}`;
+}
+
+function openSettings() {
+    window.location.href = `setting.html`;
+}
         (function() {
             // ========== 配置 ==========
             const GITHUB_CONFIG = { owner: "s220515001", repo: "my-chat-system", branch: "main" };
             const TOKEN_BIN_ID = "6a296f88da38895dfea6e9b3";
             const MESSAGES_GIST_ID = "07ba593a56998e7c9ec7651702ec9c53";
             const ADMIN_CREDENTIALS = { username: "admin", password: "admin114514" };
-
+	const CURRENT_VERSION = "1.1.0";  // 当前版本号
+const CHANGELOG_URL = "up.html"; 
 	    
             let currentUser = null;
             let friendsData = [];
@@ -1616,7 +1626,157 @@ let userAvatarsCache = {};
             let statusTooltipEl = null;
             let longPressTimer = null;
             let longPressStartPos = null;
+		function checkAndShowChangelog() {
+    const storageKey = `changelog_seen_${currentUser?.username || 'guest'}`;
+    const lastSeenVersion = localStorage.getItem(storageKey);
+    
+    // 如果用户没有看过当前版本的更新日志
+    if (lastSeenVersion !== CURRENT_VERSION) {
+        showChangelogModal();
+    }
+}
 
+// 显示更新日志弹窗（内嵌 up.html）
+function showChangelogModal() {
+    // 创建遮罩层
+    const overlay = document.createElement('div');
+    overlay.id = 'changelogOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    // 创建弹窗容器
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        width: 90%;
+        max-width: 700px;
+        max-height: 85vh;
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease;
+    `;
+    
+    // 头部
+    const header = document.createElement('div');
+    header.style.cssText = `
+        padding: 16px 20px;
+        background: var(--primary-color);
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+    `;
+    header.innerHTML = `
+        <span style="font-size: 18px; font-weight: bold;">📋 更新日志</span>
+        <button id="closeChangelogBtn" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">&times;</button>
+    `;
+    
+    // 内容区（iframe 加载 up.html）
+    const content = document.createElement('div');
+    content.style.cssText = `
+        flex: 1;
+        overflow-y: auto;
+        background: var(--bg-primary);
+    `;
+    
+    const iframe = document.createElement('iframe');
+    iframe.src = CHANGELOG_URL;
+    iframe.style.cssText = `
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: var(--bg-primary);
+    `;
+    content.appendChild(iframe);
+    
+    // 底部按钮
+    const footer = document.createElement('div');
+    footer.style.cssText = `
+        padding: 16px 20px;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        flex-shrink: 0;
+    `;
+    footer.innerHTML = `
+        <button id="laterBtn" style="padding: 8px 20px; background: transparent; border: 1px solid var(--border-color); border-radius: 24px; cursor: pointer; color: var(--text-primary); font-size: 14px;">稍后再看</button>
+        <button id="confirmBtn" style="padding: 8px 20px; background: var(--primary-color); border: none; border-radius: 24px; cursor: pointer; color: white; font-size: 14px;">我已知晓</button>
+    `;
+    
+    modal.appendChild(header);
+    modal.appendChild(content);
+    modal.appendChild(footer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // 调整 iframe 高度
+    const adjustIframeHeight = () => {
+        try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const height = iframeDoc.body.scrollHeight;
+            iframe.style.height = Math.min(height, 500) + 'px';
+        } catch(e) {}
+    };
+    iframe.onload = () => {
+        setTimeout(adjustIframeHeight, 100);
+    };
+    
+    // 关闭弹窗并记录状态
+    const closeAndRecord = (permanent = false) => {
+        overlay.remove();
+        if (permanent && currentUser) {
+            const storageKey = `changelog_seen_${currentUser.username}`;
+            localStorage.setItem(storageKey, CURRENT_VERSION);
+        }
+    };
+    
+    // 按钮事件
+    document.getElementById('closeChangelogBtn').onclick = () => closeAndRecord(false);
+    document.getElementById('laterBtn').onclick = () => closeAndRecord(false);
+    document.getElementById('confirmBtn').onclick = () => closeAndRecord(true);
+    
+    // 点击遮罩层关闭（不记录）
+    overlay.onclick = (e) => {
+        if (e.target === overlay) closeAndRecord(false);
+    };
+}
+
+// 添加动画样式
+const changelogStyles = document.createElement('style');
+changelogStyles.textContent = `
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;
+document.head.appendChild(changelogStyles);
             async function loadUserAvatarsCache() {
     try {
         const users = await readGitHubFile('users.json') || {};
@@ -3841,6 +4001,9 @@ document.querySelectorAll('.chat-group-btn').forEach(b => {
     await saveMessages(all);
     if (pollInterval) clearInterval(pollInterval);
     pollInterval = setInterval(pollMessages, 2000);
+setTimeout(() => {
+        checkAndShowChangelog();
+    }, 500);
 }
             async function handleSubmit() {
                 const username = document.getElementById('loginUsername').value.trim();
