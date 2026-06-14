@@ -34,6 +34,14 @@
     "members": [
       "suhaochen"
     ],
-    "owner": "suhaochen"
+    "owner": "suhaochen",
+    "settings": {
+      "inviteConfirm": true,
+      "memberInvite": true,
+      "allMute": false,
+      "joinVerify": "admin",
+      "anonymousChat": false,
+      "mutedMembers": []
+    }
   }
 ]
