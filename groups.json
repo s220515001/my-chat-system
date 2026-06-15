@@ -18,7 +18,15 @@
       "薄荷.",
       "周星馨"
     ],
-    "announcement": "通知：群公告功能上线！"
+    "announcement": "通知：群公告功能上线！",
+    "settings": {
+      "inviteConfirm": true,
+      "memberInvite": true,
+      "allMute": false,
+      "joinVerify": "admin",
+      "anonymousChat": false,
+      "mutedMembers": []
+    }
   },
   {
     "id": "1781341502024",
