@@ -20,6 +20,15 @@
         "nickname": "素昊陈",
         "content": "我们这样抢人真的好吗...",
         "timestamp": 1781532143107
+      },
+      {
+        "id": 1781532204374,
+        "userId": "test1",
+        "nickname": "test1",
+        "content": "有什么不好的...",
+        "replyTo": 1781532143107,
+        "replyToNickname": "素昊陈",
+        "timestamp": 1781532204374
       }
     ]
   },
