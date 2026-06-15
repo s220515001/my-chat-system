@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>朋友圈 - GitChat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f8f9fa;
+            --bg-secondary: #ffffff;
+            --text-primary: #2d3436;
+            --text-secondary: #7f8c8d;
+            --border-color: #e9ecef;
+            --primary-color: #1abc9c;
+            --primary-hover: #16a085;
+            --danger-color: #e74c3c;
+            --danger-hover: #c0392b;
+            --like-color: #e74c3c;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --header-bg: #ffffff;
+            --card-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --text-primary: #d0d0d0;
+            --text-secondary: #808080;
+            --border-color: #2a2a4a;
+            --primary-color: #16a085;
+            --primary-hover: #1a8a72;
+            --header-bg: #16213e;
+            --card-bg: #2a2a4a;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 头部导航 */
+        .moments-header {
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .moments-header .title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .publish-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--primary-color);
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: background 0.2s;
+        }
+
+        .publish-btn:hover {
+            background: rgba(26,188,156,0.1);
+        }
+
+        /* 动态列表容器 */
+        .moments-container {
+            position: fixed;
+            top: 60px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* 动态卡片 */
+        .moment-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+
+        .moment-card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* 卡片头部 */
+        .moment-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .moment-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .moment-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .moment-user-info {
+            flex: 1;
+        }
+
+        .moment-nickname {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .moment-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .moment-delete {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .moment-card:hover .moment-delete {
+            opacity: 1;
+        }
+
+        .moment-delete:hover {
+            background: rgba(231,76,60,0.1);
+            color: var(--danger-color);
+        }
+
+        /* 动态内容 */
+        .moment-content {
+            margin-bottom: 12px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        /* 图片区域 */
+        .moment-images {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .moment-images.single {
+            grid-template-columns: 1fr;
+            max-width: 300px;
+        }
+
+        .moment-images.two {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .moment-image {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            background: var(--bg-primary);
+        }
+
+        .moment-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.2s;
+        }
+
+        .moment-image img:hover {
+            transform: scale(1.05);
+        }
+
+        /* 操作栏 */
+        .moment-actions {
+            display: flex;
+            gap: 24px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: rgba(0,0,0,0.05);
+        }
+
+        .action-btn.liked {
+            color: var(--like-color);
+        }
+
+        .action-btn.liked svg {
+            fill: var(--like-color);
+            stroke: var(--like-color);
+        }
+
+        /* 评论区 */
+        .comments-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .comment-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .comment-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .comment-content-wrapper {
+            flex: 1;
+        }
+
+        .comment-nickname {
+            font-weight: 600;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .comment-reply-to {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .comment-text {
+            margin-left: 4px;
+        }
+
+        .comment-meta {
+            margin-top: 4px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .comment-time {
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .comment-reply-btn {
+            background: none;
+            border: none;
+            font-size: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .comment-reply-btn:hover {
+            color: var(--primary-color);
+        }
+
+        .comment-delete {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            opacity: 0;
+        }
+
+        .comment-item:hover .comment-delete {
+            opacity: 1;
+        }
+
+        .comment-delete:hover {
+            background: rgba(231,76,60,0.1);
+            color: var(--danger-color);
+        }
+
+        .comment-input-area {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .reply-input-area {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            padding-left: 36px;
+        }
+
+        .cancel-reply-btn {
+            background: var(--text-secondary);
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .comment-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .comment-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .comment-submit {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        /* 模态框 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 16px;
+        }
+
+        .moment-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 16px;
+        }
+
+        .image-preview-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .image-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-preview .remove-img {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0,0,0,0.6);
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .add-image-btn {
+            width: 80px;
+            height: 80px;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            background: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .publish-submit {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* 图片预览大图 */
+        .image-viewer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-viewer img {
+            max-width: 90vw;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+
+        .image-viewer-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 32px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="moments-header">
+        <button class="back-btn" id="backBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            返回
+        </button>
+        <span class="title">朋友圈</span>
+        <button class="publish-btn" id="publishBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M12 8v8M8 12h8"/>
+            </svg>
+            发布
+        </button>
+    </div>
+
+    <div class="moments-container" id="momentsContainer">
+        <div class="empty-state">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px;">
+                <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                <path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <p>暂无动态</p>
+            <p style="font-size: 12px; margin-top: 8px;">发布第一条朋友圈吧</p>
+        </div>
+    </div>
+
+    <!-- 发布弹窗 -->
+    <div id="publishModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>发布新动态</h3>
+                <button class="back-btn" id="closeModalBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <textarea id="momentContent" class="moment-textarea" placeholder="分享你的想法..."></textarea>
+                <div class="image-preview-area" id="imagePreviewArea"></div>
+                <button class="add-image-btn" id="addImageBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                    <span>添加图片</span>
+                </button>
+                <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
+                <button class="publish-submit" id="confirmPublishBtn">发布</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 配置 ==========
+        const GITHUB_CONFIG = { owner: "s220515001", repo: "my-chat-system", branch: "main" };
+        const TOKEN_BIN_ID = "6a296f88da38895dfea6e9b3";
+        
+        let currentUser = null;
+        let momentsData = [];
+        let friendsList = [];
+        let usersData = {};
+        let selectedImages = [];
+        let cachedToken = null;
+        let replyContext = { momentId: null, parentCommentId: null, replyToNickname: null };
+
+        // ========== 工具函数 ==========
+        async function getGitHubToken() {
+            if (cachedToken) return cachedToken;
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${TOKEN_BIN_ID}/latest`);
+            const data = await res.json();
+            cachedToken = data.record.github_token;
+            return cachedToken;
+        }
+
+        function decodeBase64(str) {
+            try { return decodeURIComponent(escape(atob(str))); } catch (e) { return atob(str); }
+        }
+
+        async function readGitHubFile(filename) {
+            const token = await getGitHubToken();
+            const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
+            const res = await fetch(url, { headers: { Authorization: `token ${token}` } });
+            if (res.status === 404) return null;
+            if (!res.ok) throw new Error(`读取失败: ${res.status}`);
+            const data = await res.json();
+            return JSON.parse(decodeBase64(data.content));
+        }
+
+        async function writeGitHubFile(filename, content, msg) {
+            const token = await getGitHubToken();
+            const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${filename}?ref=${GITHUB_CONFIG.branch}`;
+            let sha = null;
+            try {
+                const r = await fetch(url, { headers: { Authorization: `token ${token}` } });
+                if (r.ok) sha = (await r.json()).sha;
+            } catch (e) {}
+            const body = {
+                message: msg,
+                content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
+                branch: GITHUB_CONFIG.branch
+            };
+            if (sha) body.sha = sha;
+            const wr = await fetch(url, {
+                method: 'PUT',
+                headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (!wr.ok) throw new Error(`写入失败: ${wr.status}`);
+            return await wr.json();
+        }
+
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        let width = img.width;
+                        let height = img.height;
+                        const maxDim = 800;
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round(height * maxDim / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round(width * maxDim / height);
+                                height = maxDim;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob(resolve, 'image/jpeg', 0.7);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function loadMoments() {
+            momentsData = await readGitHubFile('moments.json') || [];
+            return momentsData;
+        }
+
+        async function saveMoments() {
+            await writeGitHubFile('moments.json', momentsData, '更新朋友圈');
+        }
+
+        async function loadUsers() {
+            usersData = await readGitHubFile('users.json') || {};
+        }
+
+        async function loadFriends() {
+            const fs = await readGitHubFile('friendships.json') || [];
+            const myFriends = [];
+            for (const f of fs) {
+                if (f.user1 === currentUser) myFriends.push(f.user2);
+                if (f.user2 === currentUser) myFriends.push(f.user1);
+            }
+            friendsList = myFriends;
+        }
+
+        function canViewMoment(userId) {
+            return userId === currentUser || friendsList.includes(userId);
+        }
+
+        async function publishMoment(content, imageBlobs) {
+            const imageBase64List = [];
+            for (const blob of imageBlobs) {
+                const base64 = await blobToBase64(blob);
+                imageBase64List.push(base64);
+            }
+            
+            const moment = {
+                id: Date.now(),
+                userId: currentUser,
+                nickname: usersData[currentUser]?.nickname || currentUser,
+                avatar: usersData[currentUser]?.avatar || null,
+                content: content.trim(),
+                images: imageBase64List,
+                timestamp: Date.now(),
+                likes: [],
+                comments: []
+            };
+            momentsData.unshift(moment);
+            await saveMoments();
+            renderMoments();
+        }
+
+        async function toggleLike(momentId) {
+            const moment = momentsData.find(m => m.id === momentId);
+            if (!moment) return;
+            
+            const index = moment.likes.indexOf(currentUser);
+            if (index === -1) {
+                moment.likes.push(currentUser);
+            } else {
+                moment.likes.splice(index, 1);
+            }
+            
+            await saveMoments();
+            
+            // 局部更新 UI
+            const card = document.querySelector(`.moment-card[data-moment-id="${momentId}"]`);
+            if (card) {
+                const likeBtn = card.querySelector('.moment-actions .action-btn:first-child');
+                const likeCount = likeBtn.querySelector('span');
+                if (likeCount) likeCount.textContent = moment.likes.length;
+                
+                if (moment.likes.includes(currentUser)) {
+                    likeBtn.classList.add('liked');
+                } else {
+                    likeBtn.classList.remove('liked');
+                }
+            }
+        }
+
+        async function addComment(momentId, content) {
+            if (!content.trim()) return;
+            const moment = momentsData.find(m => m.id === momentId);
+            if (!moment) return;
+            moment.comments.push({
+                id: Date.now(),
+                userId: currentUser,
+                nickname: usersData[currentUser]?.nickname || currentUser,
+                content: content.trim(),
+                timestamp: Date.now()
+            });
+            await saveMoments();
+            renderSingleMoment(momentId);
+        }
+
+        async function addReply(momentId, parentCommentId, replyToNickname, content) {
+            if (!content.trim()) return;
+            const moment = momentsData.find(m => m.id === momentId);
+            if (!moment) return;
+            
+            moment.comments.push({
+                id: Date.now(),
+                userId: currentUser,
+                nickname: usersData[currentUser]?.nickname || currentUser,
+                content: content.trim(),
+                replyTo: parentCommentId,
+                replyToNickname: replyToNickname,
+                timestamp: Date.now()
+            });
+            await saveMoments();
+            renderSingleMoment(momentId);
+        }
+
+        async function deleteComment(momentId, commentId) {
+            const moment = momentsData.find(m => m.id === momentId);
+            if (!moment) return;
+            const comment = moment.comments.find(c => c.id === commentId);
+            if (comment && comment.userId === currentUser) {
+                moment.comments = moment.comments.filter(c => c.id !== commentId);
+                await saveMoments();
+                renderSingleMoment(momentId);
+            }
+        }
+
+        async function deleteMoment(momentId) {
+            const moment = momentsData.find(m => m.id === momentId);
+            if (moment && moment.userId === currentUser) {
+                if (confirm('确定删除这条动态吗？')) {
+                    momentsData = momentsData.filter(m => m.id !== momentId);
+                    await saveMoments();
+                    renderMoments();
+                }
+            }
+        }
+
+        function formatTime(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            const minute = 60 * 1000;
+            const hour = 60 * minute;
+            const day = 24 * hour;
+            
+            if (diff < minute) return '刚刚';
+            if (diff < hour) return `${Math.floor(diff / minute)}分钟前`;
+            if (diff < day) return `${Math.floor(diff / hour)}小时前`;
+            if (diff < 7 * day) return `${Math.floor(diff / day)}天前`;
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        function viewUserProfile(username) {
+            window.location.href = `personalpage.html?user=${encodeURIComponent(username)}`;
+        }
+
+        function showReplyInput(momentId, parentCommentId, replyToNickname) {
+            // 隐藏所有回复输入框
+            document.querySelectorAll('.reply-input-area').forEach(area => {
+                area.style.display = 'none';
+            });
+            
+            replyContext = { momentId, parentCommentId, replyToNickname };
+            const replyArea = document.getElementById(`reply-input-area-${momentId}`);
+            if (replyArea) {
+                replyArea.style.display = 'flex';
+                document.getElementById(`reply-input-${momentId}`).focus();
+            }
+        }
+
+        function cancelReply(momentId) {
+            const replyArea = document.getElementById(`reply-input-area-${momentId}`);
+            if (replyArea) {
+                replyArea.style.display = 'none';
+            }
+            replyContext = { momentId: null, parentCommentId: null, replyToNickname: null };
+        }
+
+        async function submitReply(momentId) {
+            const input = document.getElementById(`reply-input-${momentId}`);
+            const content = input.value.trim();
+            if (!content) return;
+            
+            await addReply(momentId, replyContext.parentCommentId, replyContext.replyToNickname, content);
+            input.value = '';
+            cancelReply(momentId);
+        }
+
+        function renderSingleMoment(momentId) {
+            const moment = momentsData.find(m => m.id === momentId);
+            if (!moment) return;
+            
+            const card = document.querySelector(`.moment-card[data-moment-id="${momentId}"]`);
+            if (!card) {
+                renderMoments();
+                return;
+            }
+            
+            // 只更新评论区
+            const commentsSection = card.querySelector('.comments-section');
+            if (commentsSection) {
+                commentsSection.innerHTML = `
+                    ${moment.comments.map(comment => `
+                        <div class="comment-item" data-comment-id="${comment.id}">
+                            <div class="comment-avatar">${comment.nickname.charAt(0)}</div>
+                            <div class="comment-content-wrapper">
+                                <div>
+                                    <span class="comment-nickname" onclick="viewUserProfile('${comment.userId}')">${escapeHtml(comment.nickname)}</span>
+                                    ${comment.replyTo ? `<span class="comment-reply-to"> 回复 ${escapeHtml(comment.replyToNickname)}</span>` : ''}
+                                    <span class="comment-text">${escapeHtml(comment.content)}</span>
+                                </div>
+                                <div class="comment-meta">
+                                    <span class="comment-time">${formatTime(comment.timestamp)}</span>
+                                    <button class="comment-reply-btn" onclick="showReplyInput(${moment.id}, ${comment.id}, '${escapeHtml(comment.nickname)}')">回复</button>
+                                </div>
+                            </div>
+                            ${comment.userId === currentUser ? `
+                                <button class="comment-delete" onclick="deleteComment(${moment.id}, ${comment.id})">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M18 6L6 18M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                    <div class="comment-input-area" id="comment-input-area-${moment.id}">
+                        <input type="text" class="comment-input" id="comment-input-${moment.id}" placeholder="写下你的评论...">
+                        <button class="comment-submit" onclick="submitComment(${moment.id})">发送</button>
+                    </div>
+                    <div class="reply-input-area" id="reply-input-area-${moment.id}" style="display: none;">
+                        <input type="text" class="comment-input" id="reply-input-${moment.id}" placeholder="回复...">
+                        <button class="comment-submit" onclick="submitReply(${moment.id})">回复</button>
+                        <button class="cancel-reply-btn" onclick="cancelReply(${moment.id})">取消</button>
+                    </div>
+                `;
+            }
+            
+            // 更新评论数
+            const commentBtn = card.querySelector('.moment-actions .action-btn:last-child span');
+            if (commentBtn) commentBtn.textContent = moment.comments.length;
+        }
+
+        function submitComment(momentId) {
+            const input = document.getElementById(`comment-input-${momentId}`);
+            const content = input.value.trim();
+            if (content) {
+                addComment(momentId, content);
+                input.value = '';
+            }
+        }
+
+        function renderMoments() {
+            const container = document.getElementById('momentsContainer');
+            const myMoments = momentsData.filter(m => canViewMoment(m.userId));
+            
+            if (myMoments.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px;">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                            <path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <p>暂无动态</p>
+                        <p style="font-size: 12px; margin-top: 8px;">发布第一条朋友圈吧</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = myMoments.map(moment => {
+                const isLiked = moment.likes.includes(currentUser);
+                const avatarUrl = moment.avatar ? `https://raw.githubusercontent.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${moment.avatar}` : null;
+                
+                return `
+                    <div class="moment-card" data-moment-id="${moment.id}">
+                        <div class="moment-header">
+                            <div class="moment-avatar">
+                                ${avatarUrl ? `<img src="${avatarUrl}" onerror="this.parentElement.innerHTML='${moment.nickname.charAt(0)}'">` : moment.nickname.charAt(0)}
+                            </div>
+                            <div class="moment-user-info">
+                                <div class="moment-nickname">${escapeHtml(moment.nickname)}</div>
+                                <div class="moment-time">${formatTime(moment.timestamp)}</div>
+                            </div>
+                            ${moment.userId === currentUser ? `
+                                <button class="moment-delete" onclick="deleteMoment(${moment.id})">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                </button>
+                            ` : ''}
+                        </div>
+                        ${moment.content ? `<div class="moment-content">${escapeHtml(moment.content)}</div>` : ''}
+                        ${moment.images && moment.images.length ? `
+                            <div class="moment-images ${moment.images.length === 1 ? 'single' : (moment.images.length === 2 ? 'two' : '')}">
+                                ${moment.images.map(img => `
+                                    <div class="moment-image" onclick="viewImage('${img.replace(/'/g, "\\'")}')">
+                                        <img src="${img}" loading="lazy">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="moment-actions">
+                            <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${moment.id})">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                </svg>
+                                <span>${moment.likes.length}</span>
+                            </button>
+                            <button class="action-btn" onclick="toggleComments(${moment.id})">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                <span>${moment.comments.length}</span>
+                            </button>
+                        </div>
+                        <div class="comments-section" id="comments-${moment.id}" style="display: none;">
+                            ${moment.comments.map(comment => `
+                                <div class="comment-item" data-comment-id="${comment.id}">
+                                    <div class="comment-avatar">${comment.nickname.charAt(0)}</div>
+                                    <div class="comment-content-wrapper">
+                                        <div>
+                                            <span class="comment-nickname" onclick="viewUserProfile('${comment.userId}')">${escapeHtml(comment.nickname)}</span>
+                                            ${comment.replyTo ? `<span class="comment-reply-to"> 回复 ${escapeHtml(comment.replyToNickname)}</span>` : ''}
+                                            <span class="comment-text">${escapeHtml(comment.content)}</span>
+                                        </div>
+                                        <div class="comment-meta">
+                                            <span class="comment-time">${formatTime(comment.timestamp)}</span>
+                                            <button class="comment-reply-btn" onclick="showReplyInput(${moment.id}, ${comment.id}, '${escapeHtml(comment.nickname)}')">回复</button>
+                                        </div>
+                                    </div>
+                                    ${comment.userId === currentUser ? `
+                                        <button class="comment-delete" onclick="deleteComment(${moment.id}, ${comment.id})">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18 6L6 18M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                            <div class="comment-input-area" id="comment-input-area-${moment.id}">
+                                <input type="text" class="comment-input" id="comment-input-${moment.id}" placeholder="写下你的评论...">
+                                <button class="comment-submit" onclick="submitComment(${moment.id})">发送</button>
+                            </div>
+                            <div class="reply-input-area" id="reply-input-area-${moment.id}" style="display: none;">
+                                <input type="text" class="comment-input" id="reply-input-${moment.id}" placeholder="回复...">
+                                <button class="comment-submit" onclick="submitReply(${moment.id})">回复</button>
+                                <button class="cancel-reply-btn" onclick="cancelReply(${moment.id})">取消</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleComments(momentId) {
+            const section = document.getElementById(`comments-${momentId}`);
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        function viewImage(src) {
+            const viewer = document.createElement('div');
+            viewer.className = 'image-viewer';
+            viewer.innerHTML = `
+                <button class="image-viewer-close" onclick="this.parentElement.remove()">✕</button>
+                <img src="${src}">
+            `;
+            document.body.appendChild(viewer);
+            viewer.onclick = (e) => {
+                if (e.target === viewer) viewer.remove();
+            };
+        }
+
+        function escapeHtml(s) {
+            if (!s || typeof s !== 'string') return '';
+            return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+        }
+
+        // 发布弹窗逻辑
+        function initPublishModal() {
+            const modal = document.getElementById('publishModal');
+            const publishBtn = document.getElementById('publishBtn');
+            const closeBtn = document.getElementById('closeModalBtn');
+            const addImageBtn = document.getElementById('addImageBtn');
+            const imageInput = document.getElementById('imageInput');
+            const confirmBtn = document.getElementById('confirmPublishBtn');
+            const imagePreviewArea = document.getElementById('imagePreviewArea');
+            
+            publishBtn.onclick = () => {
+                selectedImages = [];
+                document.getElementById('momentContent').value = '';
+                imagePreviewArea.innerHTML = '';
+                modal.style.display = 'flex';
+            };
+            
+            closeBtn.onclick = () => modal.style.display = 'none';
+            modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+            
+            addImageBtn.onclick = () => imageInput.click();
+            
+            imageInput.onchange = async (e) => {
+                const files = Array.from(e.target.files);
+                for (const file of files) {
+                    if (selectedImages.length >= 9) {
+                        alert('最多只能添加9张图片');
+                        break;
+                    }
+                    const compressed = await compressImage(file);
+                    const previewUrl = URL.createObjectURL(compressed);
+                    selectedImages.push(compressed);
+                    
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview';
+                    previewDiv.innerHTML = `
+                        <img src="${previewUrl}">
+                        <button class="remove-img" data-index="${selectedImages.length - 1}">✕</button>
+                    `;
+                    imagePreviewArea.appendChild(previewDiv);
+                }
+                imageInput.value = '';
+                
+                document.querySelectorAll('.remove-img').forEach(btn => {
+                    btn.onclick = (e) => {
+                        const idx = parseInt(btn.dataset.index);
+                        selectedImages.splice(idx, 1);
+                        btn.parentElement.remove();
+                        document.querySelectorAll('.remove-img').forEach((b, i) => b.dataset.index = i);
+                    };
+                });
+            };
+            
+            confirmBtn.onclick = async () => {
+                const content = document.getElementById('momentContent').value;
+                if (!content.trim() && selectedImages.length === 0) {
+                    alert('请填写内容或添加图片');
+                    return;
+                }
+                
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = '发布中...';
+                
+                await publishMoment(content, selectedImages);
+                modal.style.display = 'none';
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '发布';
+                selectedImages = [];
+            };
+        }
+
+        // 主题切换
+        function initTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            } else {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            }
+        }
+
+        // 初始化
+        async function init() {
+            initTheme();
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get('user');
+            if (!username) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = username;
+            
+            await loadUsers();
+            await loadFriends();
+            await loadMoments();
+            
+            renderMoments();
+            initPublishModal();
+            
+            document.getElementById('backBtn').onclick = () => {
+                window.location.href = 'index.html';
+            };
+        }
+        
+        // 暴露全局函数
+        window.toggleLike = toggleLike;
+        window.addComment = addComment;
+        window.deleteComment = deleteComment;
+        window.deleteMoment = deleteMoment;
+        window.toggleComments = toggleComments;
+        window.submitComment = submitComment;
+        window.submitReply = submitReply;
+        window.showReplyInput = showReplyInput;
+        window.cancelReply = cancelReply;
+        window.viewImage = viewImage;
+        window.viewUserProfile = viewUserProfile;
+        
+        init();
+    </script>
+</body>
+</html>

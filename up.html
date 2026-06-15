@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>更新日志 - GitChat</title>
     <style>
+        /* ============================================
+         * 重要提示 - 给未来的AI/开发者
+         * ============================================
+         * 1. 禁止使用 Emoji 表情符号，所有图标使用 SVG
+         * 2. 优先使用 CSS 变量，保持主题一致性
+         * 3. 所有交互元素必须有 hover 效果
+         * 4. 深色模式必须完整适配
+         * 5. 移动端需要响应式适配
+         * 6. 代码注释使用中文
+         * 7. 保持与主页面相同的设计语言
+         * ============================================
+         */
+        
         * {
             margin: 0;
             padding: 0;
@@ -14,257 +27,486 @@
         :root {
             --bg-primary: #f8f9fa;
             --bg-secondary: #ffffff;
-            --text-primary: #2c3e50;
-            --text-secondary: #6c757d;
+            --text-primary: #2d3436;
+            --text-secondary: #7f8c8d;
+            --text-muted: #adb5bd;
             --border-color: #e9ecef;
             --primary-color: #1abc9c;
             --primary-hover: #16a085;
-            --version-bg: #e8f4f8;
-            --version-color: #1abc9c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
+            --header-bg: #ffffff;
+            --card-bg: #ffffff;
+            --tag-bg: #f0f2f5;
         }
 
         [data-theme="dark"] {
             --bg-primary: #1a1a2e;
             --bg-secondary: #16213e;
-            --text-primary: #e0e0e0;
-            --text-secondary: #a0a0a0;
+            --text-primary: #d0d0d0;
+            --text-secondary: #808080;
+            --text-muted: #555555;
             --border-color: #2a2a4a;
             --primary-color: #16a085;
-            --version-bg: #1e2a3a;
-            --version-color: #16a085;
+            --primary-hover: #1a8a72;
+            --header-bg: #16213e;
+            --card-bg: #2a2a4a;
+            --tag-bg: #1e2a3a;
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.3);
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            min-height: 100vh;
-            padding: 20px;
+            line-height: 1.6;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
+            padding: 20px;
         }
 
         /* 头部 */
         .header {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 20px 24px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border-color);
             text-align: center;
+            padding: 40px 20px;
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        .header-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: var(--primary-color);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .header h1 {
             font-size: 28px;
             margin-bottom: 8px;
-            color: var(--primary-color);
         }
 
-        .header .subtitle {
-            font-size: 14px;
+        .version {
             color: var(--text-secondary);
+            font-size: 14px;
         }
 
-        /* 版本卡片 */
-        .version-card {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            margin-bottom: 16px;
+        /* 版本区块 */
+        .version-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
             border: 1px solid var(--border-color);
-            overflow: hidden;
         }
 
         .version-header {
-            padding: 16px 20px;
-            background: var(--version-bg);
-            border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .version-number {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--version-color);
-        }
-
-        .version-date {
-            font-size: 13px;
-            color: var(--text-secondary);
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border-color);
         }
 
         .version-tag {
             background: var(--primary-color);
             color: white;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
         }
 
-        .version-tag.new {
-            background: #e74c3c;
+        .version-tag.old {
+            background: var(--text-secondary);
         }
 
-        .version-content {
-            padding: 16px 20px;
+        .version-date {
+            color: var(--text-secondary);
+            font-size: 13px;
         }
 
+        .version-title {
+            flex: 1;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* 更新内容列表 */
         .update-list {
             list-style: none;
-            padding-left: 0;
         }
 
-        .update-list li {
-            padding: 8px 0;
-            padding-left: 24px;
-            position: relative;
+        .update-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
             border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
-            line-height: 1.5;
         }
 
-        .update-list li:last-child {
+        .update-item:last-child {
             border-bottom: none;
         }
 
-        .update-list li::before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: var(--primary-color);
-            font-weight: bold;
-        }
-
-        .update-list li.feature::before {
-            content: "✨";
-        }
-
-        .update-list li.fix::before {
-            content: "🔧";
-        }
-
-        .update-list li.optimize::before {
-            content: "⚡";
-        }
-
-        /* 回到顶部 */
-        .back-to-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            cursor: pointer;
+        .update-icon {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            transition: all 0.2s;
-            z-index: 100;
         }
 
-        .back-to-top:hover {
-            transform: translateY(-2px);
+        .update-content {
+            flex: 1;
+        }
+
+        .update-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .update-desc {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .update-badge {
+            display: inline-block;
+            background: var(--tag-bg);
+            color: var(--text-secondary);
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        /* 功能标签 */
+        .feature-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--tag-bg);
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 12px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        /* 底部按钮 */
+        .footer {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .close-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
             background: var(--primary-hover);
+            transform: scale(0.98);
         }
 
         /* 响应式 */
         @media (max-width: 640px) {
-            body {
+            .container {
                 padding: 12px;
             }
-            .version-header {
-                flex-direction: column;
-                align-items: flex-start;
+            .version-section {
+                padding: 16px;
+            }
+            .update-item {
+                gap: 8px;
+            }
+            .update-icon {
+                width: 24px;
+                height: 24px;
             }
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <div class="header-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                <path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+        </div>
+        <h1>更新日志</h1>
+        <p class="version">持续更新，让聊天更美好</p>
+    </div>
+
     <div class="container">
-        <div class="header">
-            <h1>📋 更新日志</h1>
-            <div class="subtitle">记录 GitChat 的每一次成长</div>
+        <!-- v1.2.0 - 朋友圈功能 -->
+        <div class="version-section">
+            <div class="version-header">
+                <span class="version-tag">v1.2.0</span>
+                <span class="version-date">2024-01-15</span>
+                <span class="version-title">朋友圈功能上线</span>
+            </div>
+            <ul class="update-list">
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                            <path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">全新朋友圈模块</div>
+                        <div class="update-desc">发布图文动态，分享生活点滴，支持最多9张图片</div>
+                    </div>
+                </li>
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">点赞与评论</div>
+                        <div class="update-desc">支持给好友动态点赞，发表评论和回复评论</div>
+                    </div>
+                </li>
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 8v4l3 3"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">动态时效性</div>
+                        <div class="update-desc">显示刚刚、几分钟前、几小时前等智能时间格式</div>
+                    </div>
+                </li>
+            </ul>
         </div>
 
-        <!-- 版本 v1.1.0 -->
-        <div class="version-card" id="version-1.1.0">
+        <!-- v1.1.0 - 群聊增强 -->
+        <div class="version-section">
             <div class="version-header">
-                <div>
-                    <span class="version-number">v1.1.0</span>
-                    <span class="version-tag new">最新</span>
-                </div>
-                <span class="version-date">2024-06-14</span>
+                <span class="version-tag">v1.1.0</span>
+                <span class="version-date">2024-01-01</span>
+                <span class="version-title">群聊功能增强</span>
             </div>
-            <div class="version-content">
-                <ul class="update-list">
-                    <li class="feature">新增个人设置页面，支持修改昵称、个性签名、生日、性别</li>
-                    <li class="feature">新增头像上传功能，头像存储到仓库 avatars 文件夹</li>
-                    <li class="feature">新增个人主页，点击用户名/头像可查看他人资料</li>
-                    <li class="feature">管理员可编辑任意用户的完整资料（昵称、签名、生日、性别、头像）</li>
-                    <li class="feature">点击侧边栏自己的头像/昵称可直接进入设置页面</li>
-                    <li class="feature">群聊消息中显示发送者头像，点击可查看个人主页</li>
-                    <li class="optimize">优化深色/浅色模式切换体验</li>
-                    <li class="optimize">优化移动端适配</li>
-                    <li class="fix">修复消息送达状态显示问题</li>
-                </ul>
-            </div>
+            <ul class="update-list">
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">群公告功能</div>
+                        <div class="update-desc">群主和管理员可发布群公告，成员可查看</div>
+                    </div>
+                </li>
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H5.78a1.65 1.65 0 0 0-1.51 1 1.65 1.65 0 0 0 .33 1.82l.07.08A10 10 0 0 0 12 17.66a10 10 0 0 0 6.33-2.58l.07-.08z"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">群管理功能</div>
+                        <div class="update-desc">群主可设置管理员、移除成员、解散群聊</div>
+                    </div>
+                </li>
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">群禁言功能</div>
+                        <div class="update-desc">支持全员禁言和单独禁言指定成员</div>
+                    </div>
+                </li>
+            </ul>
         </div>
 
-        <!-- 版本 v1.0.0 -->
-        <div class="version-card" id="version-1.0.0">
+        <!-- v1.0.0 - 基础功能 -->
+        <div class="version-section">
             <div class="version-header">
-                <div>
-                    <span class="version-number">v1.0.0</span>
-                </div>
-                <span class="version-date">2024-06-01</span>
+                <span class="version-tag old">v1.0.0</span>
+                <span class="version-date">2023-12-01</span>
+                <span class="version-title">基础聊天功能</span>
             </div>
-            <div class="version-content">
-                <ul class="update-list">
-                    <li class="feature">首次发布 GitChat 私密聊天室</li>
-                    <li class="feature">支持用户注册/登录</li>
-                    <li class="feature">支持添加好友、创建群聊</li>
-                    <li class="feature">支持发送文字和图片消息</li>
-                    <li class="feature">支持消息引用、撤回、删除</li>
-                    <li class="feature">支持深色/浅色主题切换</li>
-                    <li class="feature">管理员后台管理用户和群聊</li>
-                </ul>
+            <ul class="update-list">
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success-color)" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">即时通讯</div>
+                        <div class="update-desc">支持私聊和群聊，消息实时同步</div>
+                    </div>
+                </li>
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success-color)" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+                            <path d="M8 2v20M16 2v20M2 8h20M2 16h20"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">图片发送</div>
+                        <div class="update-desc">支持发送图片，自动压缩优化</div>
+                    </div>
+                </li>
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success-color)" stroke-width="2">
+                            <rect x="9" y="2" width="6" height="12" rx="3"/>
+                            <path d="M5 10v1a7 7 0 0 0 14 0v-1"/>
+                            <line x1="12" y1="19" x2="12" y2="22"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">语音消息</div>
+                        <div class="update-desc">支持录制和发送语音消息</div>
+                    </div>
+                </li>
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success-color)" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">好友与群聊</div>
+                        <div class="update-desc">添加好友、创建群聊、管理联系人</div>
+                    </div>
+                </li>
+                <li class="update-item">
+                    <div class="update-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success-color)" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                    </div>
+                    <div class="update-content">
+                        <div class="update-title">深色模式</div>
+                        <div class="update-desc">支持深色/浅色主题切换，保护眼睛</div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 功能预览 -->
+        <div class="version-section">
+            <div class="version-header">
+                <span class="version-tag">即将到来</span>
+                <span class="version-title">规划中功能</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <span class="feature-tag">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    文件传输
+                </span>
+                <span class="feature-tag">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                    消息撤回
+                </span>
+                <span class="feature-tag">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                    </svg>
+                    消息引用
+                </span>
+                <span class="feature-tag">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                    语音通话
+                </span>
+                <span class="feature-tag">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4v16h16V4H4z M8 9h8M8 13h6"/>
+                    </svg>
+                    聊天记录导出
+                </span>
             </div>
         </div>
     </div>
 
-    <button class="back-to-top" id="backToTop" title="回到顶部">↑</button>
+    <div class="footer">
+        <button class="close-btn" id="closeBtn">我知道了</button>
+    </div>
 
     <script>
-        // 主题同步
-        function syncTheme() {
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-            document.documentElement.setAttribute('data-theme', theme);
+        // 主题切换 - 与主页面保持一致
+        function initTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            } else {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            }
         }
-        syncTheme();
-
-        // 回到顶部
-        document.getElementById('backToTop').addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        initTheme();
+        
+        document.getElementById('closeBtn').addEventListener('click', function() {
+            if (window.parent && window.parent !== window) {
+                // 如果在 iframe 中，通知父窗口关闭
+                window.parent.postMessage('closeChangelog', '*');
+            } else {
+                window.close();
+            }
         });
-
+        
         // 监听主题变化
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'theme') {
-                syncTheme();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
             }
         });
     </script>
