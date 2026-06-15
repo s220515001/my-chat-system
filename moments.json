@@ -13,7 +13,15 @@
     "likes": [
       "suhaochen"
     ],
-    "comments": []
+    "comments": [
+      {
+        "id": 1781532143107,
+        "userId": "suhaochen",
+        "nickname": "素昊陈",
+        "content": "我们这样抢人真的好吗...",
+        "timestamp": 1781532143107
+      }
+    ]
   },
   {
     "id": 1781531726343,
