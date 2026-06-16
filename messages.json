@@ -73,5 +73,16 @@
     "content": "？我也饿了 你咋不给我送...",
     "timestamp": 1781618883609,
     "status": "delivered"
+  },
+  {
+    "id": "msg_1781618946670_urltfc",
+    "from": "test1",
+    "fromNickname": "test1",
+    "targetId": "chat_suhaochen_test1",
+    "targetType": "friend",
+    "type": "text",
+    "content": "哦 没事了",
+    "timestamp": 1781618946670,
+    "status": "sending"
   }
 ]
