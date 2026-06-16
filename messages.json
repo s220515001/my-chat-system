@@ -7,5 +7,16 @@
     "targetType": "friend",
     "content": "hi！",
     "timestamp": 1781101615931
+  },
+  {
+    "id": "msg_1781617711520_v8ybbv",
+    "from": "test1",
+    "fromNickname": "test1",
+    "targetId": "chat_suhaochen_test1",
+    "targetType": "friend",
+    "type": "text",
+    "content": "在吗",
+    "timestamp": 1781617711520,
+    "status": "sending"
   }
 ]
