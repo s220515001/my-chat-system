@@ -40,5 +40,16 @@
     "content": "我有个事想你帮忙...",
     "timestamp": 1781618696878,
     "status": "delivered"
+  },
+  {
+    "id": "msg_1781618798149_lsgvzn",
+    "from": "suhaochen",
+    "fromNickname": "素昊陈",
+    "targetId": "chat_suhaochen_test1",
+    "targetType": "friend",
+    "type": "text",
+    "content": "什么事",
+    "timestamp": 1781618798149,
+    "status": "sending"
   }
 ]
