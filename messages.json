@@ -95,5 +95,16 @@
     "content": "谢谢",
     "timestamp": 1781618979673,
     "status": "delivered"
+  },
+  {
+    "id": "msg_1781619035857_cz9kvu",
+    "from": "test1",
+    "fromNickname": "test1",
+    "targetId": "chat_suhaochen_test1",
+    "targetType": "friend",
+    "type": "text",
+    "content": "没事",
+    "timestamp": 1781619035857,
+    "status": "sending"
   }
 ]
