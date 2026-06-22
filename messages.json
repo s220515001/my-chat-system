@@ -161,5 +161,16 @@
     "content": "就是 我喜欢上了一个人",
     "timestamp": 1782136572582,
     "status": "delivered"
+  },
+  {
+    "id": "msg_1782136786080_n364hb",
+    "from": "test1",
+    "fromNickname": "test1",
+    "targetId": "chat_suhaochen_test1",
+    "targetType": "friend",
+    "type": "text",
+    "content": "谁啊 谁啊 我认识吗",
+    "timestamp": 1782136786080,
+    "status": "sending"
   }
 ]
