@@ -128,5 +128,16 @@
     "content": "怎么了",
     "timestamp": 1782136456595,
     "status": "sending"
+  },
+  {
+    "id": "msg_1782136491130_pz8gs0",
+    "from": "suhaochen",
+    "fromNickname": "素昊陈",
+    "targetId": "chat_suhaochen_test1",
+    "targetType": "friend",
+    "type": "text",
+    "content": "我有件事想找你问问",
+    "timestamp": 1782136491130,
+    "status": "sending"
   }
 ]
