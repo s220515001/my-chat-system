@@ -106,5 +106,16 @@
     "content": "没事",
     "timestamp": 1781619035857,
     "status": "delivered"
+  },
+  {
+    "id": "msg_1782136399967_ao46rm",
+    "from": "suhaochen",
+    "fromNickname": "素昊陈",
+    "targetId": "chat_suhaochen_test1",
+    "targetType": "friend",
+    "type": "text",
+    "content": "在吗",
+    "timestamp": 1782136399967,
+    "status": "sending"
   }
 ]
