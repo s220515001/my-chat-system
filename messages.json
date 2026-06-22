@@ -139,5 +139,16 @@
     "content": "我有件事想找你问问",
     "timestamp": 1782136491130,
     "status": "delivered"
+  },
+  {
+    "id": "msg_1782136545398_wjfdh3",
+    "from": "test1",
+    "fromNickname": "test1",
+    "targetId": "chat_suhaochen_test1",
+    "targetType": "friend",
+    "type": "text",
+    "content": "但说无妨",
+    "timestamp": 1782136545398,
+    "status": "sending"
   }
 ]
