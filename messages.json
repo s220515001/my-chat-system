@@ -117,5 +117,16 @@
     "content": "在吗",
     "timestamp": 1782136399967,
     "status": "delivered"
+  },
+  {
+    "id": "msg_1782136456595_d5zhi5",
+    "from": "test1",
+    "fromNickname": "test1",
+    "targetId": "chat_suhaochen_test1",
+    "targetType": "friend",
+    "type": "text",
+    "content": "怎么了",
+    "timestamp": 1782136456595,
+    "status": "sending"
   }
 ]
