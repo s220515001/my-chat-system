@@ -150,5 +150,16 @@
     "content": "但说无妨",
     "timestamp": 1782136545398,
     "status": "delivered"
+  },
+  {
+    "id": "msg_1782136572582_bvgp0l",
+    "from": "suhaochen",
+    "fromNickname": "素昊陈",
+    "targetId": "chat_suhaochen_test1",
+    "targetType": "friend",
+    "type": "text",
+    "content": "就是 我喜欢上了一个人",
+    "timestamp": 1782136572582,
+    "status": "sending"
   }
 ]
