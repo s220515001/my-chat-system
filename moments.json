@@ -10,7 +10,15 @@
     "likes": [
       "suhaochen"
     ],
-    "comments": []
+    "comments": [
+      {
+        "id": 1782917988302,
+        "userId": "suhaochen",
+        "nickname": "素昊陈",
+        "content": "我现在还饿",
+        "timestamp": 1782917988303
+      }
+    ]
   },
   {
     "id": 1781531999446,
