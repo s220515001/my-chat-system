@@ -172,5 +172,16 @@
     "content": "谁啊 谁啊 我认识吗",
     "timestamp": 1782136786080,
     "status": "delivered"
+  },
+  {
+    "id": "msg_1790476440328_knfbi4",
+    "from": "admin",
+    "fromNickname": "管理员",
+    "targetId": "group_1781316670717",
+    "targetType": "group",
+    "type": "text",
+    "content": "大家好呀",
+    "timestamp": 1790476440328,
+    "status": "sending"
   }
 ]
